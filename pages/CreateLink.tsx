@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { Customer, Service, Currency } from '../types';
-import { Link, PlusCircle, Search, Copy, X } from 'lucide-react';
+import { Link, PlusCircle, Search, Copy, X, Check } from 'lucide-react';
 
 // --- MOCK DATA --- //
+// FIX: Removed 'lastContacted' property from mock customer data as it's not in the Customer type.
 const mockCustomers: Customer[] = [
-  { id: 1, name: 'Alice Johnson', email: 'alice@example.com', phone: '123-456-7890', country: 'USA', lastContacted: '2024-07-20', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/11/200/200' },
-  { id: 2, name: 'Bob Williams', email: 'bob@example.com', phone: '234-567-8901', country: 'Canada', lastContacted: '2024-07-19', agent: 'Emily White', avatarUrl: 'https://picsum.photos/id/12/200/200' },
-  { id: 3, name: 'Charlie Brown', email: 'charlie@example.com', phone: '345-678-9012', country: 'UK', lastContacted: '2024-07-21', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/13/200/200' },
+  { id: 1, name: 'Alice Johnson', email: 'alice@example.com', phone: '123-456-7890', country: 'USA', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/11/200/200' },
+  { id: 2, name: 'Bob Williams', email: 'bob@example.com', phone: '234-567-8901', country: 'Canada', agent: 'Emily White', avatarUrl: 'https://picsum.photos/id/12/200/200' },
+  { id: 3, name: 'Charlie Brown', email: 'charlie@example.com', phone: '345-678-9012', country: 'UK', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/13/200/200' },
 ];
 
 const mockServices: Service[] = [
@@ -29,9 +30,9 @@ interface GeneratedLink {
 }
 
 const mockGeneratedLinks: GeneratedLink[] = [
-    { id: 'LNK001', customer: mockCustomers[0], amount: 3500, currency: 'USD', status: 'Paid', date: '2024-07-22', url: 'https://secure.healthcrm.com/pay/1', createdBy: 'Admin User' },
-    { id: 'LNK002', customer: mockCustomers[1], amount: 10000, currency: 'EUR', status: 'Pending', date: '2024-07-23', url: 'https://secure.healthcrm.com/pay/2', createdBy: 'John Smith' },
-    { id: 'LNK003', customer: mockCustomers[2], amount: 5500, currency: 'USD', status: 'Expired', date: '2024-07-20', url: 'https://secure.healthcrm.com/pay/3', createdBy: 'Emily White' },
+    { id: 'LNK001', customer: mockCustomers[0], amount: 3500, currency: 'USD', status: 'Paid', date: '2024-07-22', url: `${window.location.origin}${window.location.pathname}?customer=Alice%20Johnson&services=Hair%20Transplant%20(FUE)&amount=3500&currency=USD`, createdBy: 'Admin User' },
+    { id: 'LNK002', customer: mockCustomers[1], amount: 10000, currency: 'EUR', status: 'Pending', date: '2024-07-23', url: `${window.location.origin}${window.location.pathname}?customer=Bob%20Williams&services=Dental%20Implants%20(All-on-4)&amount=10000&currency=EUR`, createdBy: 'John Smith' },
+    { id: 'LNK003', customer: mockCustomers[2], amount: 5500, currency: 'USD', status: 'Expired', date: '2024-07-20', url: `${window.location.origin}${window.location.pathname}?customer=Charlie%20Brown&services=Rhinoplasty,%20Teeth%20Whitening&amount=5500&currency=USD`, createdBy: 'Emily White' },
 ];
 
 // --- MODAL COMPONENT --- //
@@ -59,7 +60,7 @@ const CreateLinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onLinkCr
             currency: currency,
             status: 'Pending',
             date: new Date().toISOString().split('T')[0],
-            url: `https://secure.healthcrm.com/pay?customer=${selectedCustomer.id}&amount=${amount}&currency=${currency}&ref=${Date.now()}`,
+            url: `${window.location.origin}${window.location.pathname}?customer=${encodeURIComponent(selectedCustomer.name)}&services=${encodeURIComponent(selectedServices.map(s => s.name).join(', '))}&amount=${amount}&currency=${currency}`,
             createdBy: 'Admin User' // In a real app, this would be the logged-in user
         };
         onLinkCreated(newLink);
@@ -134,7 +135,7 @@ const CreateLinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onLinkCr
                     </button>
                 </div>
             </div>
-            <style jsx>{`
+            <style>{`
                 @keyframes fade-in-scale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
                 .animate-fade-in-scale { animation: fade-in-scale 0.2s ease-out forwards; }
             `}</style>
@@ -149,6 +150,7 @@ const CreateLink: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
+    const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
 
     const filteredLinks = useMemo(() => links.filter(link => {
         const matchesSearch = link.customer.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -159,6 +161,14 @@ const CreateLink: React.FC = () => {
     const handleAddLink = (newLink: GeneratedLink) => {
         setLinks(prev => [newLink, ...prev]);
         setIsModalOpen(false);
+    };
+
+    const handleCopyClick = (linkToCopy: GeneratedLink) => {
+      navigator.clipboard.writeText(linkToCopy.url);
+      setCopiedLinkId(linkToCopy.id);
+      setTimeout(() => {
+        setCopiedLinkId(null);
+      }, 2000);
     };
     
     const getStatusClass = (status: 'Paid' | 'Pending' | 'Expired') => ({
@@ -220,7 +230,24 @@ const CreateLink: React.FC = () => {
                                     <td className="p-4 text-gray-500">{link.date}</td>
                                     <td className="p-4 text-gray-500">{link.createdBy}</td>
                                     <td className="p-4 text-center">
-                                        <button onClick={() => navigator.clipboard.writeText(link.url)} className="p-2 text-gray-500 hover:text-[#128c7e] hover:bg-[#128c7e]/10 rounded-full" title={t('createLink.copyUrl')}><Copy size={18}/></button>
+                                        <div className="relative inline-flex items-center justify-center">
+                                            <button 
+                                                onClick={() => handleCopyClick(link)} 
+                                                className="p-2 text-gray-500 hover:text-[#128c7e] hover:bg-[#128c7e]/10 rounded-full transition-colors" 
+                                                title={t('createLink.copyUrl')}
+                                            >
+                                                {copiedLinkId === link.id ? (
+                                                    <Check className="text-green-500" size={18} />
+                                                ) : (
+                                                    <Copy size={18} />
+                                                )}
+                                            </button>
+                                            {copiedLinkId === link.id && (
+                                                <div className="absolute bottom-full mb-2 w-max bg-gray-800 text-white text-xs px-2 py-1 rounded-md shadow-lg pointer-events-none transition-opacity duration-300 opacity-100">
+                                                    {t('createLink.urlCopied')}
+                                                </div>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

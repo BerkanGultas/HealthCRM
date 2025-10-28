@@ -7,17 +7,17 @@ import { PlusCircle, Search, Pencil, Trash2, X } from 'lucide-react';
 const mockAgents = ['John Smith', 'Emily White', 'Admin User'];
 
 const mockCustomers: Customer[] = [
-  { id: 1, name: 'Alice Johnson', email: 'alice.j@example.com', phone: '+1-202-555-0186', country: 'USA', lastContacted: '2024-07-22', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/11/200/200' },
-  { id: 2, name: 'Bob Williams', email: 'bob.w@example.com', phone: '+44-20-7946-0958', country: 'UK', lastContacted: '2024-07-21', agent: 'Emily White', avatarUrl: 'https://picsum.photos/id/12/200/200' },
-  { id: 3, name: 'Charlie Brown', email: 'charlie.b@example.com', phone: '+49-30-12345678', country: 'Germany', lastContacted: '2024-07-20', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/13/200/200' },
-  { id: 4, name: 'Diana Miller', email: 'diana.m@example.com', phone: '+33-1-23-45-67-89', country: 'France', lastContacted: '2024-07-22', agent: 'Emily White', avatarUrl: 'https://picsum.photos/id/14/200/200' },
-  { id: 5, name: 'Ethan Garcia', email: 'ethan.g@example.com', phone: '+90-555-123-4567', country: 'Turkey', lastContacted: '2024-07-19', agent: 'Admin User', avatarUrl: 'https://picsum.photos/id/15/200/200' },
+  { id: 1, name: 'Alice Johnson', email: 'alice.j@example.com', phone: '+1-202-555-0186', country: 'USA', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/11/200/200' },
+  { id: 2, name: 'Bob Williams', email: 'bob.w@example.com', phone: '+44-20-7946-0958', country: 'UK', agent: 'Emily White', avatarUrl: 'https://picsum.photos/id/12/200/200' },
+  { id: 3, name: 'Charlie Brown', email: 'charlie.b@example.com', phone: '+49-30-12345678', country: 'Germany', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/13/200/200' },
+  { id: 4, name: 'Diana Miller', email: 'diana.m@example.com', phone: '+33-1-23-45-67-89', country: 'France', agent: 'Emily White', avatarUrl: 'https://picsum.photos/id/14/200/200' },
+  { id: 5, name: 'Ethan Garcia', email: 'ethan.g@example.com', phone: '+90-555-123-4567', country: 'Turkey', agent: 'Admin User', avatarUrl: 'https://picsum.photos/id/15/200/200' },
 ];
 
 const CustomerModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onSave: (customer: Omit<Customer, 'id' | 'lastContacted'>) => void;
+    onSave: (customer: Omit<Customer, 'id'>) => void;
     customerToEdit: Customer | null;
 }> = ({ isOpen, onClose, onSave, customerToEdit }) => {
     const { t } = useLanguage();
@@ -80,7 +80,7 @@ const CustomerModal: React.FC<{
                     <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-[#128c7e] text-white hover:bg-[#075e54] transition-colors">{t('customers.save')}</button>
                 </div>
             </div>
-             <style jsx>{`
+             <style>{`
                 @keyframes fade-in-scale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
                 .animate-fade-in-scale { animation: fade-in-scale 0.2s ease-out forwards; }
             `}</style>
@@ -112,14 +112,13 @@ const Customers: React.FC = () => {
         setModalOpen(true);
     };
 
-    const handleSaveCustomer = (customerData: Omit<Customer, 'id' | 'lastContacted'>) => {
+    const handleSaveCustomer = (customerData: Omit<Customer, 'id'>) => {
         if(editingCustomer) {
-            setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? { ...editingCustomer, ...customerData, lastContacted: new Date().toISOString().split('T')[0] } : c));
+            setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? { ...editingCustomer, ...customerData } : c));
         } else {
             const newCustomer: Customer = {
                 id: Math.max(...customers.map(c => c.id), 0) + 1,
                 ...customerData,
-                lastContacted: new Date().toISOString().split('T')[0]
             };
             setCustomers(prev => [newCustomer, ...prev]);
         }
@@ -166,7 +165,6 @@ const Customers: React.FC = () => {
                     <th className="p-4 font-semibold">{t('customers.name')}</th>
                     <th className="p-4 font-semibold">{t('customers.country')}</th>
                     <th className="p-4 font-semibold">{t('customers.agent')}</th>
-                    <th className="p-4 font-semibold">{t('customers.lastContact')}</th>
                     <th className="p-4 text-center font-semibold">{t('customers.actions')}</th>
                     </tr>
                 </thead>
@@ -185,7 +183,6 @@ const Customers: React.FC = () => {
                         </td>
                         <td className="p-4 text-gray-600">{customer.country}</td>
                         <td className="p-4 text-gray-600">{customer.agent}</td>
-                        <td className="p-4 text-gray-500">{customer.lastContacted}</td>
                         <td className="p-4 text-center">
                             <div className="flex items-center justify-center gap-2">
                                 <button onClick={() => handleOpenEditModal(customer)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-100 rounded-full transition-colors" aria-label={t('customers.editModalTitle')}><Pencil size={18}/></button>

@@ -24,6 +24,15 @@ const agentPerformanceData = [
     { agent: 'Jessica Green', conversations: 130, avgResponseTime: 4 },
 ];
 
+const userStatusData = [
+    { name: 'Admin User', role: 'Admin', avatarUrl: 'https://picsum.photos/id/237/200/200', status: 'Online' },
+    { name: 'Jane Doe', role: 'Moderator', avatarUrl: 'https://picsum.photos/id/1/200/200', status: 'Online' },
+    { name: 'John Smith', role: 'Agent', avatarUrl: 'https://picsum.photos/id/2/200/200', status: 'Offline' },
+    { name: 'Emily White', role: 'Agent', avatarUrl: 'https://picsum.photos/id/3/200/200', status: 'Online' },
+    { name: 'Michael Brown', role: 'Agent', avatarUrl: 'https://picsum.photos/id/4/200/200', status: 'Offline' },
+    { name: 'Jessica Green', role: 'Agent', avatarUrl: 'https://picsum.photos/id/5/200/200', status: 'Online' },
+];
+
 const Reports: React.FC = () => {
     const { t } = useLanguage();
     
@@ -64,28 +73,54 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4">{t('reports.agentPerformance')}</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="p-4 font-semibold">{t('reports.agent')}</th>
-                <th className="p-4 font-semibold">{t('reports.handledConversations')}</th>
-                <th className="p-4 font-semibold">{t('reports.avgResponseTime')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {agentPerformanceData.map((agent, index) => (
-                <tr key={index} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50">
-                  <td className="p-4 font-semibold">{agent.agent}</td>
-                  <td className="p-4">{agent.conversations}</td>
-                  <td className="p-4">{agent.avgResponseTime}</td>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-semibold mb-4">{t('reports.agentPerformance')}</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="p-4 font-semibold">{t('reports.agent')}</th>
+                  <th className="p-4 font-semibold">{t('reports.handledConversations')}</th>
+                  <th className="p-4 font-semibold">{t('reports.avgResponseTime')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {agentPerformanceData.map((agent, index) => (
+                  <tr key={index} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50">
+                    <td className="p-4 font-semibold">{agent.agent}</td>
+                    <td className="p-4">{agent.conversations}</td>
+                    <td className="p-4">{agent.avgResponseTime}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        <div className="bg-white p-6 rounded-lg border border-gray-200 flex flex-col">
+            <h3 className="text-lg font-semibold mb-4">{t('reports.onlineOfflineUsers')}</h3>
+            <div className="space-y-3 flex-1 overflow-y-auto pr-2 -mr-2">
+                {userStatusData.map((user, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50/80 transition-colors">
+                        <div className="flex items-center gap-3">
+                            <img src={user.avatarUrl} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
+                            <div>
+                                <p className="font-semibold text-gray-800">{user.name}</p>
+                                <p className="text-sm text-gray-500">{user.role}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className={`h-2.5 w-2.5 rounded-full ${user.status === 'Online' ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
+                            <span className={`text-sm font-medium ${user.status === 'Online' ? 'text-green-600' : 'text-gray-500'}`}>
+                                {t(`reports.${user.status.toLowerCase()}`)}
+                            </span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+
       </div>
     </div>
   );

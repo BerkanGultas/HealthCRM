@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { useChat } from '../hooks/useChat';
 import { Conversation, ChatMessage, MessagePlatform } from '../types';
-import { Facebook, Instagram, MessageCircle, Send, Paperclip, DollarSign, Search } from 'lucide-react';
+import { Facebook, Instagram, MessageCircle, Send, Paperclip, Search, FileText } from 'lucide-react';
 
 const PlatformIcon: React.FC<{platform: MessagePlatform}> = ({ platform }) => {
     switch(platform) {
@@ -14,53 +14,13 @@ const PlatformIcon: React.FC<{platform: MessagePlatform}> = ({ platform }) => {
     }
 }
 
-const PaymentLinkModal: React.FC<{ onGenerate: (link: string) => void; onCancel: () => void }> = ({ onGenerate, onCancel }) => {
-    const { t } = useLanguage();
-    const [amount, setAmount] = useState('');
-    const [currency, setCurrency] = useState('USD');
-
-    const handleGenerate = () => {
-        if(amount) {
-            onGenerate(`${t('inbox.paymentLinkMessage')} https://payment.link/mock/${currency.toLowerCase()}${amount}`);
-        }
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-96 border border-gray-200">
-                <h3 className="text-lg font-semibold mb-4">{t('inbox.generatePaymentLink')}</h3>
-                <div className="space-y-4">
-                    <div>
-                        <label className="text-sm text-gray-500">{t('inbox.amount')}</label>
-                        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full bg-gray-100 border border-gray-300 rounded-md p-2 mt-1 focus:ring-[#128c7e] focus:border-[#128c7e]" />
-                    </div>
-                    <div>
-                        <label className="text-sm text-gray-500">{t('inbox.currency')}</label>
-                        <select value={currency} onChange={e => setCurrency(e.target.value)} className="w-full bg-gray-100 border border-gray-300 rounded-md p-2 mt-1 focus:ring-[#128c7e] focus:border-[#128c7e]">
-                            <option>USD</option>
-                            <option>EUR</option>
-                            <option>GBP</option>
-                            <option>TRY</option>
-                        </select>
-                    </div>
-                </div>
-                <div className="flex justify-end gap-4 mt-6">
-                    <button onClick={onCancel} className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100">{t('inbox.cancel')}</button>
-                    <button onClick={handleGenerate} className="px-4 py-2 rounded-md bg-[#128c7e] text-white hover:bg-[#075e54]">{t('inbox.generateLink')}</button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-
 const Inbox: React.FC = () => {
     const { t } = useLanguage();
     const { conversations, messages, sendMessage } = useChat();
     const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
     const [newMessage, setNewMessage] = useState('');
-    const [isModalOpen, setModalOpen] = useState(false);
     const chatBodyRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (activeConversation) {
@@ -87,23 +47,32 @@ const Inbox: React.FC = () => {
             setNewMessage('');
         }
     };
-    
-    const handleGeneratePaymentLink = (link: string) => {
-        if (activeConversation) {
-            sendMessage(activeConversation.id, {
-                sender: 'agent',
-                text: link,
-                isPaymentLink: true,
-            });
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0] && activeConversation) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const fileUrl = event.target?.result as string;
+                sendMessage(activeConversation.id, {
+                    sender: 'agent',
+                    text: file.name,
+                    attachment: {
+                        name: file.name,
+                        url: fileUrl,
+                        type: file.type,
+                    },
+                });
+            };
+            reader.readAsDataURL(file);
+            e.target.value = ''; // Reset file input
         }
-        setModalOpen(false);
-    }
+    };
 
     const currentMessages = activeConversation ? messages[activeConversation.id] || [] : [];
 
     return (
         <div className="flex h-[calc(100vh-7rem)] bg-white rounded-lg border border-gray-200 overflow-hidden">
-            {isModalOpen && <PaymentLinkModal onGenerate={handleGeneratePaymentLink} onCancel={() => setModalOpen(false)} />}
             {/* Conversations List */}
             <div className="w-1/3 border-r border-gray-200 flex flex-col">
                 <div className="p-4 border-b border-gray-200">
@@ -151,10 +120,20 @@ const Inbox: React.FC = () => {
                            {currentMessages.map(msg => (
                                <div key={msg.id} className={`flex ${msg.sender === 'agent' ? 'justify-end' : 'justify-start'}`}>
                                    <div className={`max-w-md p-3 rounded-lg shadow-sm ${msg.sender === 'agent' ? 'bg-[#dcf8c6]' : 'bg-white'}`}>
-                                       {msg.isPaymentLink ? (
+                                       {msg.attachment ? (
+                                           <a
+                                             href={msg.attachment.url}
+                                             download={msg.attachment.name}
+                                             className="flex items-center gap-3 p-2 rounded-md hover:bg-black/5"
+                                             aria-label={`Download ${msg.attachment.name}`}
+                                           >
+                                             <FileText size={32} className="text-gray-600 flex-shrink-0" />
+                                             <span className="font-medium text-gray-800 underline break-all">{msg.attachment.name}</span>
+                                           </a>
+                                       ) : msg.isPaymentLink ? (
                                            <a href="#" className="underline text-blue-600 hover:text-blue-800">{msg.text}</a>
                                        ) : (
-                                           <p className="text-gray-800">{msg.text}</p>
+                                           <p className="text-gray-800 whitespace-pre-wrap">{msg.text}</p>
                                        )}
                                        <span className="text-xs text-gray-500 block text-right mt-1">{msg.timestamp}</span>
                                    </div>
@@ -169,11 +148,16 @@ const Inbox: React.FC = () => {
                                     onChange={e => setNewMessage(e.target.value)}
                                     onKeyPress={e => e.key === 'Enter' && handleSendMessage()}
                                     placeholder={t('inbox.typeMessage')}
-                                    className="w-full bg-white border border-gray-300 rounded-full py-3 pl-12 pr-28 focus:ring-[#128c7e] focus:border-[#128c7e]"
+                                    className="w-full bg-white border border-gray-300 rounded-full py-3 pl-10 pr-28 focus:ring-[#128c7e] focus:border-[#128c7e]"
                                 />
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex gap-3">
-                                    <button className="text-gray-500 hover:text-gray-800"><Paperclip size={20} /></button>
-                                    <button onClick={() => setModalOpen(true)} className="text-gray-500 hover:text-gray-800"><DollarSign size={20} /></button>
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                                     <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleFileSelect}
+                                        className="hidden"
+                                    />
+                                    <button onClick={() => fileInputRef.current?.click()} className="text-gray-500 hover:text-gray-800"><Paperclip size={20} /></button>
                                 </div>
                                 <button onClick={handleSendMessage} className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#128c7e] text-white rounded-full p-2 hover:bg-[#075e54]">
                                     <Send size={20} />

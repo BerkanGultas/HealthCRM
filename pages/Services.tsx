@@ -163,7 +163,7 @@ const Services: React.FC = () => {
                     <button onClick={handleSaveService} className="px-4 py-2 rounded-lg bg-[#128c7e] text-white hover:bg-[#075e54] transition-colors">{t('services.save')}</button>
                 </div>
             </div>
-             <style jsx>{`
+             <style>{`
                 @keyframes fade-in-scale {
                     from {
                         opacity: 0;

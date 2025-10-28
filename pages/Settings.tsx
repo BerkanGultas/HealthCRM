@@ -1,6 +1,6 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
+import { useSettings } from '../hooks/useLanguage';
 import { Facebook, Instagram, MessageCircle, UploadCloud, CheckCircle, XCircle, ChevronDown, CreditCard } from 'lucide-react';
 
 // Using a simplified WhatsApp icon as it's not in lucide
@@ -328,10 +328,50 @@ const IntegrationCard: React.FC<{
     );
 };
 
+const COMPANY_INFO_STORAGE_KEY = 'healthcrm_company_info';
+
 const Settings: React.FC = () => {
     const { t } = useLanguage();
-    const [logoUrl, setLogoUrl] = useState('');
+    const { logoUrl, setLogoUrl } = useSettings();
     const [openIntegration, setOpenIntegration] = useState<string | null>(null);
+
+    const [companyInfo, setCompanyInfo] = useState({
+        address: '',
+        phone: '',
+        email: '',
+    });
+
+    useEffect(() => {
+        try {
+            const storedInfo = localStorage.getItem(COMPANY_INFO_STORAGE_KEY);
+            if (storedInfo) {
+                setCompanyInfo(JSON.parse(storedInfo));
+            } else {
+                 setCompanyInfo({
+                    address: '123 Health St, Wellness City, 12345',
+                    phone: '(123) 456-7890',
+                    email: 'contact@healthcrm.com',
+                });
+            }
+        } catch (error) {
+            console.error("Failed to load company info from localStorage", error);
+        }
+    }, []);
+
+    const handleCompanyInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setCompanyInfo(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSaveCompanyInfo = () => {
+        try {
+            localStorage.setItem(COMPANY_INFO_STORAGE_KEY, JSON.stringify(companyInfo));
+            alert('Company information saved!');
+        } catch (error) {
+            console.error("Failed to save company info to localStorage", error);
+            alert('Failed to save company information.');
+        }
+    };
 
     const [integrations, setIntegrations] = useState({
         facebook: { connected: true, appId: '123456789012345', pageId: '987654321098765' },
@@ -347,6 +387,51 @@ const Settings: React.FC = () => {
 
     return (
         <div className="space-y-6">
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+                <h3 className="text-lg font-semibold mb-4">{t('settings.companyInfo')}</h3>
+                <div className="space-y-4">
+                    <div>
+                        <label htmlFor="address" className="block text-sm font-medium text-gray-700">{t('settings.address')}</label>
+                        <input
+                            type="text"
+                            id="address"
+                            name="address"
+                            value={companyInfo.address}
+                            onChange={handleCompanyInfoChange}
+                            placeholder="123 Health St, Wellness City, 12345"
+                            className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#128c7e] focus:border-transparent transition-colors"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700">{t('settings.phone')}</label>
+                        <input
+                            type="text"
+                            id="phone"
+                            name="phone"
+                            value={companyInfo.phone}
+                            onChange={handleCompanyInfoChange}
+                            placeholder="(123) 456-7890"
+                            className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#128c7e] focus:border-transparent transition-colors"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">{t('settings.email')}</label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            value={companyInfo.email}
+                            onChange={handleCompanyInfoChange}
+                            placeholder="contact@healthcrm.com"
+                            className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#128c7e] focus:border-transparent transition-colors"
+                        />
+                    </div>
+                </div>
+                <div className="flex justify-end mt-6">
+                    <button onClick={handleSaveCompanyInfo} className="px-4 py-2 rounded-lg bg-[#128c7e] text-white hover:bg-[#075e54] transition-colors">{t('settings.save')}</button>
+                </div>
+            </div>
+
             <div className="bg-white p-6 rounded-lg border border-gray-200">
                 <h3 className="text-lg font-semibold mb-4">{t('settings.logoSettings')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">

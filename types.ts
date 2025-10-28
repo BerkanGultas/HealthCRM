@@ -1,4 +1,4 @@
-
+// FIX: Removed self-import of `MessagePlatform` which was causing a declaration conflict.
 export enum Language {
   EN = 'en',
   DE = 'de',
@@ -15,7 +15,7 @@ export interface User {
   role: 'Admin' | 'Moderator' | 'Agent';
   avatarUrl: string;
   status: 'Active' | 'Inactive';
-  lastLogin: string;
+  platforms: MessagePlatform[];
 }
 
 export interface Customer {
@@ -24,9 +24,7 @@ export interface Customer {
   email: string;
   phone: string;
   country: string;
-  lastContacted: string;
   agent: string;
-  // FIX: Add missing avatarUrl property to the Customer interface.
   avatarUrl: string;
 }
 
@@ -55,6 +53,11 @@ export interface ChatMessage {
   timestamp: string;
   isPaymentLink?: boolean;
   agentName?: string;
+  attachment?: {
+    name: string;
+    url: string;
+    type: string;
+  };
 }
 
 export interface Conversation {

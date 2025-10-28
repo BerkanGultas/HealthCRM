@@ -1,5 +1,8 @@
-import React from 'react';
+
+import React, { useMemo } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
+import { useChat } from '../hooks/useChat';
+import { User } from '../types';
 import {
   LayoutDashboard,
   Users,
@@ -22,10 +25,17 @@ interface SidebarProps {
   setActivePage: (page: string) => void;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  onLogout: () => void;
+  currentUserRole: User['role'];
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, isOpen, setIsOpen }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, isOpen, setIsOpen, onLogout, currentUserRole }) => {
   const { t } = useLanguage();
+  const { conversations } = useChat();
+
+  const totalUnreadCount = useMemo(() => {
+    return conversations.reduce((acc, convo) => acc + (convo.unreadCount || 0), 0);
+  }, [conversations]);
 
   const navItems = [
     { name: 'Dashboard', key: 'sidebar.dashboard', icon: LayoutDashboard },
@@ -39,6 +49,20 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, isOpen, se
     { name: 'Transcript', key: 'sidebar.transcript', icon: History },
     { name: 'Settings', key: 'sidebar.settings', icon: Settings },
   ];
+
+  const visibleNavItems = useMemo(() => {
+    if (currentUserRole === 'Admin') {
+        return navItems;
+    }
+    if (currentUserRole === 'Moderator') {
+        return navItems.filter(item => item.name !== 'Settings');
+    }
+    if (currentUserRole === 'Agent') {
+        const agentPages = ['Dashboard', 'Customers', 'CreateLink', 'Invoices', 'Inbox'];
+        return navItems.filter(item => agentPages.includes(item.name));
+    }
+    return [];
+  }, [currentUserRole]);
 
   return (
     <div
@@ -57,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, isOpen, se
         </div>
         <nav className="mt-4">
           <ul>
-            {navItems.map((item) => (
+            {visibleNavItems.map((item) => (
               <li key={item.name} className="px-4 my-1">
                 <a
                   href="#"
@@ -71,8 +95,20 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, isOpen, se
                       : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
-                  <item.icon className="h-5 w-5" />
-                  <span className={`ml-4 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}>{t(item.key)}</span>
+                  <div className="relative">
+                    <item.icon className="h-5 w-5" />
+                    {item.name === 'Inbox' && totalUnreadCount > 0 && !isOpen && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border border-white">
+                            {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                        </span>
+                    )}
+                  </div>
+                  <span className={`ml-4 flex-1 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}>{t(item.key)}</span>
+                  {item.name === 'Inbox' && totalUnreadCount > 0 && isOpen && (
+                    <span className="bg-[#25d366] text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                        {totalUnreadCount}
+                    </span>
+                  )}
                 </a>
               </li>
             ))}
@@ -97,6 +133,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, isOpen, se
         </a>
         <a
           href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            onLogout();
+          }}
           className="flex items-center p-3 text-gray-500 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors duration-200"
         >
           <LogOut className="h-5 w-5" />

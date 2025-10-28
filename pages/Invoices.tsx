@@ -1,13 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { Customer, Service, Currency, Invoice } from '../types';
 import { PlusCircle, Search, FileText, MoreHorizontal, X } from 'lucide-react';
 
 // --- MOCK DATA --- //
+// FIX: Removed 'lastContacted' property from mock customer data as it's not in the Customer type.
 const mockCustomers: Customer[] = [
-  { id: 1, name: 'Alice Johnson', email: 'alice@example.com', phone: '123-456-7890', country: 'USA', lastContacted: '2024-07-20', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/11/200/200' },
-  { id: 2, name: 'Bob Williams', email: 'bob@example.com', phone: '234-567-8901', country: 'Canada', lastContacted: '2024-07-19', agent: 'Emily White', avatarUrl: 'https://picsum.photos/id/12/200/200' },
-  { id: 3, name: 'Charlie Brown', email: 'charlie@example.com', phone: '345-678-9012', country: 'UK', lastContacted: '2024-07-21', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/13/200/200' },
+  { id: 1, name: 'Alice Johnson', email: 'alice@example.com', phone: '123-456-7890', country: 'USA', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/11/200/200' },
+  { id: 2, name: 'Bob Williams', email: 'bob@example.com', phone: '234-567-8901', country: 'Canada', agent: 'Emily White', avatarUrl: 'https://picsum.photos/id/12/200/200' },
+  { id: 3, name: 'Charlie Brown', email: 'charlie@example.com', phone: '345-678-9012', country: 'UK', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/13/200/200' },
 ];
 
 const mockServices: Service[] = [
@@ -22,11 +23,35 @@ const mockInvoices: Invoice[] = [
     { id: 'INV-2024-003', customer: mockCustomers[2], services: [mockServices[0], mockServices[1]], totalAmount: 13500, currency: 'USD', status: 'Overdue', issueDate: '2024-06-25', dueDate: '2024-07-10' },
 ];
 
+const COMPANY_INFO_STORAGE_KEY = 'healthcrm_company_info';
+const defaultCompanyInfo = {
+    address: '123 Health St, Wellness City, 12345',
+    phone: '(123) 456-7890',
+    email: 'contact@healthcrm.com',
+};
+
 const CreateInvoiceModal: React.FC<{ isOpen: boolean; onClose: () => void; onInvoiceCreated: (invoice: Invoice) => void }> = ({ isOpen, onClose, onInvoiceCreated }) => {
     const { t, language } = useLanguage();
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [selectedServices, setSelectedServices] = useState<Service[]>([]);
-    
+    const [companyInfo, setCompanyInfo] = useState(defaultCompanyInfo);
+
+    useEffect(() => {
+        if (isOpen) {
+            try {
+                const storedInfo = localStorage.getItem(COMPANY_INFO_STORAGE_KEY);
+                if (storedInfo) {
+                    setCompanyInfo(JSON.parse(storedInfo));
+                } else {
+                    setCompanyInfo(defaultCompanyInfo);
+                }
+            } catch (error) {
+                console.error("Failed to load company info from localStorage", error);
+                setCompanyInfo(defaultCompanyInfo);
+            }
+        }
+    }, [isOpen]);
+
     const totalAmount = useMemo(() => {
         return selectedServices.reduce((sum, service) => sum + service.price, 0);
     }, [selectedServices]);
@@ -72,9 +97,9 @@ const CreateInvoiceModal: React.FC<{ isOpen: boolean; onClose: () => void; onInv
                         <h1 className="text-3xl font-bold text-gray-800">
                             <span className="text-[#128c7e]">Health</span>CRM
                         </h1>
-                        <p className="text-gray-500 mt-2">123 Health St, Wellness City, 12345</p>
-                        <p className="text-gray-500">Phone: (123) 456-7890</p>
-                        <p className="text-gray-500">Email: contact@healthcrm.com</p>
+                        <p className="text-gray-500 mt-2">{companyInfo.address}</p>
+                        <p className="text-gray-500">Phone: {companyInfo.phone}</p>
+                        <p className="text-gray-500">Email: {companyInfo.email}</p>
                     </div>
                     <div className="text-right">
                         <h2 className="text-3xl font-bold text-gray-400 uppercase tracking-wider">{t('invoices.invoiceTitle')}</h2>
@@ -148,7 +173,7 @@ const CreateInvoiceModal: React.FC<{ isOpen: boolean; onClose: () => void; onInv
                 </div>
 
             </div>
-            <style jsx>{`
+            <style>{`
                 @keyframes fade-in-scale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
                 .animate-fade-in-scale { animation: fade-in-scale 0.2s ease-out forwards; }
             `}</style>
