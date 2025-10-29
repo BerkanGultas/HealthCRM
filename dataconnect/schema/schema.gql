@@ -1,0 +1,59 @@
+type Provider @table {
+  name: String!
+  email: String!
+  createdAt: Timestamp!
+  phoneNumber: String
+  specialty: String
+  address: String
+}
+
+type Patient @table {
+  provider: Provider
+  firstName: String!
+  lastName: String!
+  dateOfBirth: Date!
+  createdAt: Timestamp!
+  phoneNumber: String
+  email: String
+  address: String
+}
+
+type Customer @table {
+  name: String!
+  email: String!
+  phone: String
+  country: String
+  agent: String
+  avatarUrl: String
+  createdAt: Timestamp!
+}
+
+type Appointment @table {
+  provider: Provider
+  patient: Patient
+  appointmentDate: Date!
+  appointmentTime: String!
+  status: String!
+  createdAt: Timestamp!
+  reasonForVisit: String
+  notes: String
+}
+
+type MedicalRecord @table {
+  patient: Patient
+  recordDate: Date!
+  diagnosis: String!
+  createdAt: Timestamp!
+  treatment: String
+  medications: String
+  notes: String
+}
+
+type Interaction @table {
+  provider: Provider
+  patient: Patient
+  interactionDate: Timestamp!
+  interactionType: String!
+  createdAt: Timestamp!
+  notes: String
+}

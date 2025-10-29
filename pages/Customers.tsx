@@ -7,11 +7,11 @@ import { PlusCircle, Search, Pencil, Trash2, X } from 'lucide-react';
 const mockAgents = ['John Smith', 'Emily White', 'Admin User'];
 
 const mockCustomers: Customer[] = [
-  { id: 1, name: 'Alice Johnson', email: 'alice.j@example.com', phone: '+1-202-555-0186', country: 'USA', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/11/200/200' },
-  { id: 2, name: 'Bob Williams', email: 'bob.w@example.com', phone: '+44-20-7946-0958', country: 'UK', agent: 'Emily White', avatarUrl: 'https://picsum.photos/id/12/200/200' },
-  { id: 3, name: 'Charlie Brown', email: 'charlie.b@example.com', phone: '+49-30-12345678', country: 'Germany', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/13/200/200' },
-  { id: 4, name: 'Diana Miller', email: 'diana.m@example.com', phone: '+33-1-23-45-67-89', country: 'France', agent: 'Emily White', avatarUrl: 'https://picsum.photos/id/14/200/200' },
-  { id: 5, name: 'Ethan Garcia', email: 'ethan.g@example.com', phone: '+90-555-123-4567', country: 'Turkey', agent: 'Admin User', avatarUrl: 'https://picsum.photos/id/15/200/200' },
+  { id: '1', name: 'Alice Johnson', email: 'alice.j@example.com', phone: '+1-202-555-0186', country: 'USA', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/11/200/200', createdAt: new Date().toISOString() },
+  { id: '2', name: 'Bob Williams', email: 'bob.w@example.com', phone: '+44-20-7946-0958', country: 'UK', agent: 'Emily White', avatarUrl: 'https://picsum.photos/id/12/200/200', createdAt: new Date().toISOString() },
+  { id: '3', name: 'Charlie Brown', email: 'charlie.b@example.com', phone: '+49-30-12345678', country: 'Germany', agent: 'John Smith', avatarUrl: 'https://picsum.photos/id/13/200/200', createdAt: new Date().toISOString() },
+  { id: '4', name: 'Diana Miller', email: 'diana.m@example.com', phone: '+33-1-23-45-67-89', country: 'France', agent: 'Emily White', avatarUrl: 'https://picsum.photos/id/14/200/200', createdAt: new Date().toISOString() },
+  { id: '5', name: 'Ethan Garcia', email: 'ethan.g@example.com', phone: '+90-555-123-4567', country: 'Turkey', agent: 'Admin User', avatarUrl: 'https://picsum.photos/id/15/200/200', createdAt: new Date().toISOString() },
 ];
 
 const CustomerModal: React.FC<{
@@ -21,10 +21,21 @@ const CustomerModal: React.FC<{
     customerToEdit: Customer | null;
 }> = ({ isOpen, onClose, onSave, customerToEdit }) => {
     const { t } = useLanguage();
-    const [customerData, setCustomerData] = useState(customerToEdit || { name: '', email: '', phone: '', country: '', agent: mockAgents[0], avatarUrl: 'https://picsum.photos/seed/new/200/200' });
+    const [customerData, setCustomerData] = useState<Omit<Customer, 'id'>>(customerToEdit || {
+        name: '',
+        email: '',
+        phone: '',
+        country: '',
+        agent: mockAgents[0],
+        avatarUrl: 'https://picsum.photos/seed/new/200/200',
+        createdAt: new Date().toISOString()
+    });
     
     React.useEffect(() => {
-        setCustomerData(customerToEdit || { name: '', email: '', phone: '', country: '', agent: mockAgents[0], avatarUrl: `https://picsum.photos/seed/${Date.now()}/200/200` });
+        setCustomerData(customerToEdit ?
+            { ...customerToEdit } :
+            { name: '', email: '', phone: '', country: '', agent: mockAgents[0], avatarUrl: `https://picsum.photos/seed/${Date.now()}/200/200`, createdAt: new Date().toISOString() }
+        );
     }, [customerToEdit, isOpen]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -114,17 +125,18 @@ const Customers: React.FC = () => {
 
     const handleSaveCustomer = (customerData: Omit<Customer, 'id'>) => {
         if(editingCustomer) {
-            setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? { ...editingCustomer, ...customerData } : c));
+            setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? { ...editingCustomer, ...customerData, createdAt: editingCustomer.createdAt } : c));
         } else {
             const newCustomer: Customer = {
-                id: Math.max(...customers.map(c => c.id), 0) + 1,
+                id: (Math.max(...customers.map(c => parseInt(c.id)), 0) + 1).toString(),
                 ...customerData,
+                createdAt: new Date().toISOString(),
             };
             setCustomers(prev => [newCustomer, ...prev]);
         }
     };
 
-    const handleDeleteCustomer = (customerId: number) => {
+    const handleDeleteCustomer = (customerId: string) => {
         if (window.confirm(t('customers.deleteConfirm'))) {
             setCustomers(prev => prev.filter(c => c.id !== customerId));
         }

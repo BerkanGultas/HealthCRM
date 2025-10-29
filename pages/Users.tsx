@@ -1,16 +1,9 @@
-
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { User, MessagePlatform } from '../types';
 import { PlusCircle, Search, Pencil, Trash2, X } from 'lucide-react';
-
-const mockUsers: User[] = [
-  { id: 1, name: 'Admin User', email: 'admin@healthcrm.com', role: 'Admin', avatarUrl: 'https://picsum.photos/id/237/200/200', status: 'Active', platforms: [MessagePlatform.WhatsApp, MessagePlatform.Facebook, MessagePlatform.Instagram, MessagePlatform.WebChat] },
-  { id: 2, name: 'Jane Doe', email: 'jane.doe@healthcrm.com', role: 'Moderator', avatarUrl: 'https://picsum.photos/id/1/200/200', status: 'Active', platforms: [MessagePlatform.WhatsApp, MessagePlatform.Facebook] },
-  { id: 3, name: 'John Smith', email: 'john.smith@healthcrm.com', role: 'Agent', avatarUrl: 'https://picsum.photos/id/2/200/200', status: 'Inactive', platforms: [MessagePlatform.WhatsApp] },
-  { id: 4, name: 'Emily White', email: 'emily.white@healthcrm.com', role: 'Agent', avatarUrl: 'https://picsum.photos/id/3/200/200', status: 'Active', platforms: [MessagePlatform.Instagram, MessagePlatform.WebChat] },
-];
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 const UserModal: React.FC<{
     isOpen: boolean;
@@ -19,14 +12,12 @@ const UserModal: React.FC<{
     userToEdit: User | null;
 }> = ({ isOpen, onClose, onSave, userToEdit }) => {
     const { t } = useLanguage();
-    // FIX: Explicitly type the state and initialize it with a consistent shape.
     const [userData, setUserData] = useState<Omit<User, 'id'>>(
         userToEdit || { name: '', email: '', role: 'Agent', status: 'Active', avatarUrl: `https://picsum.photos/seed/${Date.now()}/200/200`, platforms: [] }
     );
     const [password, setPassword] = useState('');
 
-    React.useEffect(() => {
-        // FIX: Reset state when modal opens or user changes.
+    useEffect(() => {
         setUserData(userToEdit || { name: '', email: '', role: 'Agent', status: 'Active', avatarUrl: `https://picsum.photos/seed/${Date.now()}/200/200`, platforms: [] });
         setPassword('');
     }, [userToEdit, isOpen]);
@@ -140,11 +131,21 @@ const UserModal: React.FC<{
 
 const Users: React.FC = () => {
   const { t } = useLanguage();
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const usersCollection = collection(db, 'users');
+      const usersSnapshot = await getDocs(usersCollection);
+      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+      setUsers(usersList);
+    };
+
+    fetchUsers();
+  }, []);
 
   const getRoleClass = (role: 'Admin' | 'Moderator' | 'Agent') => {
     switch (role) {
@@ -174,20 +175,26 @@ const Users: React.FC = () => {
       setModalOpen(true);
   };
 
-  const handleSaveUser = (userData: Omit<User, 'id'>) => {
+  const handleSaveUser = async (userData: Omit<User, 'id'>) => {
       if(editingUser) {
+          const userRef = doc(db, 'users', editingUser.id as string);
+          await updateDoc(userRef, userData);
           setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...editingUser, ...userData } : u));
       } else {
+          const usersCollection = collection(db, 'users');
+          const docRef = await addDoc(usersCollection, userData);
           const newUser: User = {
-              id: Math.max(...users.map(u => u.id), 0) + 1,
+              id: docRef.id,
               ...userData,
           };
           setUsers(prev => [newUser, ...prev]);
       }
   };
 
-  const handleDeleteUser = (userId: number) => {
+  const handleDeleteUser = async (userId: string) => {
       if (window.confirm(t('users.deleteConfirm'))) {
+          const userRef = doc(db, 'users', userId);
+          await deleteDoc(userRef);
           setUsers(prev => prev.filter(u => u.id !== userId));
       }
   };
@@ -267,7 +274,7 @@ const Users: React.FC = () => {
                         <button onClick={() => handleOpenEditModal(user)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-100 rounded-full transition-colors" aria-label={t('users.editModalTitle')}>
                             <Pencil size={18}/>
                         </button>
-                        <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-100 rounded-full transition-colors" aria-label={t('users.deleteConfirm')}>
+                        <button onClick={() => handleDeleteUser(user.id as string)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-100 rounded-full transition-colors" aria-label={t('users.deleteConfirm')}>
                             <Trash2 size={18}/>
                         </button>
                     </div>

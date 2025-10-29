@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { useSettings } from '../hooks/useLanguage';
 import { AtSign, Lock, LogIn, User, Mail, Send } from 'lucide-react';
+import { login } from '../lib/auth'; // Import the login function
 
 interface LoginPageProps {
     onLogin: (email: string) => void;
@@ -17,13 +18,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onGuestLogin }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [resetEmail, setResetEmail] = useState('');
+    const [error, setError] = useState<string | null>(null); // State for error messages
 
-    const handleLoginSubmit = (e: React.FormEvent) => {
+    const handleLoginSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (email && password) {
-            onLogin(email);
-        } else {
-            alert('Please enter email and password.');
+        setError(null); // Clear previous errors
+        try {
+            const user = await login(email, password);
+            console.log("Logged in user:", user);
+            onLogin(email); // Call the original onLogin callback
+        } catch (err: any) {
+            setError(err.message); // Set error message
         }
     };
 
@@ -66,6 +71,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onGuestLogin }) => {
 
                 {view === 'login' ? (
                     <form className="space-y-6" onSubmit={handleLoginSubmit}>
+                        {error && <p className="text-red-300 text-center">{error}</p>} {/* Display error message */}
                         <div className="relative">
                             <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={20} />
                             <input

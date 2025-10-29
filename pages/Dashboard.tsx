@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { DollarSign, Users, Clock, MessageSquare } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { auth } from '../lib/firebase'; // Import auth
+import { getUserRole } from '../lib/auth'; // Import getUserRole
 
 const Card: React.FC<{ icon: React.ReactNode; title: string; value: string; change: string; changeType: 'increase' | 'decrease' }> = ({ icon, title, value, change, changeType }) => {
   const isIncrease = changeType === 'increase';
@@ -32,9 +34,48 @@ const platformData = [
 
 const Dashboard: React.FC = () => {
   const { t } = useLanguage();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [loadingRole, setLoadingRole] = useState(true);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        try {
+          const role = await getUserRole(currentUser.uid);
+          setUserRole(role);
+          console.log("Current user role:", role); // Log the role to console
+        } catch (error) {
+          console.error("Error fetching user role:", error);
+        } finally {
+          setLoadingRole(false);
+        }
+      } else {
+        setLoadingRole(false);
+        console.log("No user logged in.");
+      }
+    };
+
+    fetchUserRole();
+
+    // Listen for auth state changes to update role dynamically
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        fetchUserRole(); // Re-fetch role if user logs in/out
+      } else {
+        setUserRole(null);
+        setLoadingRole(false);
+        console.log("No user logged in.");
+      }
+    });
+
+    return () => unsubscribe(); // Cleanup subscription
+  }, []);
 
   return (
     <div className="space-y-6">
+      {/* You can conditionally render elements based on userRole here if needed */}
+      {/* For now, the role is just logged to the console */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card icon={<DollarSign className="text-green-500"/>} title={t('dashboard.totalRevenue')} value="$45,231" change="+2.5%" changeType="increase"/>
         <Card icon={<Users className="text-blue-500"/>} title={t('dashboard.newCustomers')} value="1,204" change="+5.1%" changeType="increase"/>
