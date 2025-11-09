@@ -9,10 +9,9 @@ export enum Language {
 }
 
 export interface User {
-  id: string; // Changed from number to string to match Firestore doc.id
+  id: number;
   name: string;
   email: string;
-  password?: string; // Added password field - IMPORTANT: Store hashed passwords, not plain text!
   role: 'Admin' | 'Moderator' | 'Agent';
   avatarUrl: string;
   status: 'Active' | 'Inactive';
@@ -20,14 +19,13 @@ export interface User {
 }
 
 export interface Customer {
-  id: string;
+  id: number;
   name: string;
   email: string;
-  phone?: string;
-  country?: string;
-  agent?: string;
-  avatarUrl?: string;
-  createdAt: string; // Assuming ISO string for now, will adjust if needed
+  phone: string;
+  country: string;
+  agent: string;
+  avatarUrl: string;
 }
 
 export type Currency = 'USD' | 'EUR' | 'GBP' | 'TRY';
@@ -78,7 +76,7 @@ export interface Invoice {
   services: Service[];
   totalAmount: number;
   currency: Currency;
-  status: 'Paid' | 'Pending' | 'Overdue';
+  status: 'Paid' | 'Pending' | 'Overdue' | 'SentToGIB';
   issueDate: string;
   dueDate: string;
 }

@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { useChat } from '../hooks/useChat';
@@ -64,18 +63,26 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, isOpen, se
     return [];
   }, [currentUserRole]);
 
+  const handleNavClick = (page: string) => {
+    setActivePage(page);
+    if (window.innerWidth < 768) {
+        setIsOpen(false);
+    }
+  };
+
   return (
     <div
-      className={`fixed top-0 left-0 h-full bg-white/80 backdrop-blur-lg border-r border-gray-200 flex flex-col justify-between transition-all duration-300 z-30 ${
-        isOpen ? 'w-64' : 'w-20'
-      }`}
+      className={`fixed top-0 left-0 h-full bg-[var(--card-background)] border-r border-[var(--border)] flex flex-col justify-between transition-all duration-300 z-30 w-64 
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
+        md:translate-x-0 
+        md:${isOpen ? 'w-64' : 'w-20'}`}
     >
       <div>
-        <div className="flex items-center justify-center h-20 border-b border-gray-200">
-          <h1 className={`text-2xl font-bold text-gray-800 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
-            <span className="text-[#128c7e]">Health</span>CRM
+        <div className="relative flex items-center justify-center h-20 border-b border-[var(--border)]">
+          <h1 className={`absolute text-2xl font-bold text-[var(--card-foreground)] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
+            <span className="text-[var(--primary)]">Health</span>CRM
           </h1>
-          <span className={`text-3xl font-bold text-[#128c7e] transition-opacity ${!isOpen ? 'opacity-100' : 'opacity-0'}`}>
+          <span className={`absolute text-3xl font-bold text-[var(--primary)] transition-opacity duration-300 ${!isOpen ? 'opacity-100' : 'opacity-0'}`}>
             H
           </span>
         </div>
@@ -87,25 +94,25 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, isOpen, se
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    setActivePage(item.name);
+                    handleNavClick(item.name);
                   }}
                   className={`flex items-center p-3 rounded-lg transition-colors duration-200 ${
                     activePage === item.name
-                      ? 'bg-[#128c7e]/10 text-[#128c7e] font-semibold'
-                      : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                      ? 'bg-[var(--accent)] text-[var(--accent-foreground)] font-semibold'
+                      : 'text-[var(--foreground-muted)] hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)]'
                   }`}
                 >
                   <div className="relative">
                     <item.icon className="h-5 w-5" />
                     {item.name === 'Inbox' && totalUnreadCount > 0 && !isOpen && (
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border border-white">
+                        <span className="absolute -top-1 -right-1 bg-[var(--destructive)] text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border border-white">
                             {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
                         </span>
                     )}
                   </div>
                   <span className={`ml-4 flex-1 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}>{t(item.key)}</span>
                   {item.name === 'Inbox' && totalUnreadCount > 0 && isOpen && (
-                    <span className="bg-[#25d366] text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    <span className="bg-[var(--secondary)] text-[var(--secondary-foreground)] text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                         {totalUnreadCount}
                     </span>
                   )}
@@ -115,17 +122,17 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, isOpen, se
           </ul>
         </nav>
       </div>
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-[var(--border)]">
          <a
           href="#"
           onClick={(e) => {
               e.preventDefault();
-              setActivePage('Profile');
+              handleNavClick('Profile');
             }}
           className={`flex items-center p-3 rounded-lg transition-colors duration-200 mb-2 ${
             activePage === 'Profile'
-                ? 'bg-[#128c7e]/10 text-[#128c7e] font-semibold'
-                : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                ? 'bg-[var(--accent)] text-[var(--accent-foreground)] font-semibold'
+                : 'text-[var(--foreground-muted)] hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)]'
             }`}
         >
           <UserCircle className="h-5 w-5" />
@@ -137,7 +144,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, isOpen, se
             e.preventDefault();
             onLogout();
           }}
-          className="flex items-center p-3 text-gray-500 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors duration-200"
+          className="flex items-center p-3 text-[var(--foreground-muted)] hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)] rounded-lg transition-colors duration-200"
         >
           <LogOut className="h-5 w-5" />
           <span className={`ml-4 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}>{t('sidebar.logout')}</span>

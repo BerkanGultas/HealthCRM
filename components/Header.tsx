@@ -1,8 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
+import { useTheme } from '../context/ThemeContext';
 import { Language, User } from '../types';
-import { Bell, ChevronDown, Menu, X, CheckCircle2, XCircle, AlertCircle, UserCircle, LogOut } from 'lucide-react';
+import { Bell, ChevronDown, Menu, X, CheckCircle2, XCircle, AlertCircle, UserCircle, LogOut, Sun, Moon } from 'lucide-react';
 
 interface HeaderProps {
     pageTitle: string;
@@ -35,6 +35,7 @@ type Notification = {
 
 const Header: React.FC<HeaderProps> = ({ pageTitle, onToggleSidebar, isSidebarOpen, setActivePage, onLogout, currentUserRole }) => {
   const { language, setLanguage, t } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const [isLangDropdownOpen, setLangDropdownOpen] = useState(false);
   const [isNotificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
   const [isProfileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -110,29 +111,41 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onToggleSidebar, isSidebarOp
 
 
   return (
-    <header className="flex-shrink-0 h-20 bg-white/80 backdrop-blur-lg border-b border-gray-200 flex items-center justify-between px-6">
+    <header className="relative flex-shrink-0 h-20 bg-[var(--card-background)]/80 backdrop-blur-lg border-b border-[var(--border)] flex items-center justify-between px-4 sm:px-6 z-10">
        <div className="flex items-center">
-         <button onClick={onToggleSidebar} className="mr-4 p-2 rounded-full hover:bg-gray-100 transition-colors">
-          {isSidebarOpen ? <X className="h-6 w-6 text-gray-700" /> : <Menu className="h-6 w-6 text-gray-700" />}
+         <button onClick={onToggleSidebar} className="mr-2 sm:mr-4 p-2 rounded-full hover:bg-[var(--accent)] transition-colors">
+          <Menu className="h-6 w-6 text-[var(--foreground)]" />
         </button>
         <div>
-            <h1 className="text-xl font-semibold text-gray-800">{t(`sidebar.${pageTitle.toLowerCase()}`)}</h1>
-            <p className="text-sm text-gray-500">{t('header.welcome')}</p>
+            <h1 className="text-lg sm:text-xl font-semibold text-[var(--card-foreground)]">{t(`sidebar.${pageTitle.toLowerCase()}`)}</h1>
+            <p className="text-sm text-[var(--foreground-muted)] hidden sm:block">{t('header.welcome')}</p>
         </div>
        </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
+        <button
+            onClick={toggleTheme}
+            className="p-2 rounded-full hover:bg-[var(--accent)] transition-colors"
+            aria-label="Toggle theme"
+        >
+            {theme === 'light' ? (
+                <Moon className="h-6 w-6 text-[var(--foreground-muted)]" />
+            ) : (
+                <Sun className="h-6 w-6 text-[var(--foreground-muted)]" />
+            )}
+        </button>
+
         <div className="relative" ref={langDropdownRef}>
             <button
                 onClick={() => setLangDropdownOpen(!isLangDropdownOpen)}
-                className="flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 p-2 rounded-md hover:bg-[var(--accent)] transition-colors"
             >
                 <span className="text-xl">{selectedLanguage?.flag}</span>
-                <span className="hidden md:inline text-sm font-medium">{selectedLanguage?.name}</span>
-                <ChevronDown className="h-4 w-4 text-gray-500" />
+                <span className="hidden md:inline text-sm font-medium text-[var(--foreground)]">{selectedLanguage?.name}</span>
+                <ChevronDown className="h-4 w-4 text-[var(--foreground-muted)]" />
             </button>
             {isLangDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <div className="absolute right-0 mt-2 w-40 bg-[var(--popover-background)] border border-[var(--border)] rounded-lg shadow-lg z-50">
                     {languageOptions.map(lang => (
                         <button
                             key={lang.code}
@@ -140,7 +153,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onToggleSidebar, isSidebarOp
                                 setLanguage(lang.code);
                                 setLangDropdownOpen(false);
                             }}
-                            className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-[var(--popover-foreground)] hover:bg-[var(--accent)]"
                         >
                             <span className="text-xl">{lang.flag}</span>
                             <span>{lang.name}</span>
@@ -149,33 +162,33 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onToggleSidebar, isSidebarOp
                 </div>
             )}
         </div>
-
+        
         <div className="relative" ref={notificationDropdownRef}>
-            <button onClick={handleToggleNotifications} className="relative p-2 rounded-full hover:bg-gray-100 transition-colors">
-                <Bell className="h-6 w-6 text-gray-600" />
+            <button onClick={handleToggleNotifications} className="relative p-2 rounded-full hover:bg-[var(--accent)] transition-colors">
+                <Bell className="h-6 w-6 text-[var(--foreground-muted)]" />
                 {unreadCount > 0 && (
-                    <span className="absolute top-0 right-0 block h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center ring-2 ring-white">
+                    <span className="absolute top-0 right-0 block h-5 w-5 rounded-full bg-[var(--destructive)] text-white text-xs flex items-center justify-center ring-2 ring-[var(--card-background)]">
                         {unreadCount}
                     </span>
                 )}
             </button>
             {isNotificationDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                    <div className="p-3 font-semibold border-b">{t('header.notifications.title')}</div>
+                <div className="absolute right-0 mt-2 w-80 md:w-96 bg-[var(--popover-background)] border border-[var(--border)] rounded-lg shadow-lg z-50">
+                    <div className="p-3 font-semibold border-b border-[var(--border)]">{t('header.notifications.title')}</div>
                     <div className="max-h-96 overflow-y-auto">
                         {notifications.length > 0 ? notifications.map(n => (
-                            <div key={n.id} className={`flex items-start gap-3 p-3 border-b last:border-b-0 ${!n.read ? 'bg-blue-50/50' : 'bg-white'}`}>
+                            <div key={n.id} className={`flex items-start gap-3 p-3 border-b border-[var(--border)] last:border-b-0 ${!n.read ? 'bg-[var(--accent)]/50' : ''}`}>
                                 <div className="flex-shrink-0 mt-1">{getNotificationIcon(n.type)}</div>
                                 <div className="flex-1">
-                                    <p className="font-semibold text-sm text-gray-800">{t(`header.notifications.${n.titleKey}`)}</p>
-                                    <p className="text-sm text-gray-600">
+                                    <p className="font-semibold text-sm text-[var(--popover-foreground)]">{t(`header.notifications.${n.titleKey}`)}</p>
+                                    <p className="text-sm text-[var(--foreground-muted)]">
                                         {t(`header.notifications.${n.messageKey}`, { amount: n.amount, customer: n.customer })}
                                     </p>
                                     <p className="text-xs text-gray-400 mt-1">{n.timestamp}</p>
                                 </div>
                             </div>
                         )) : (
-                            <p className="p-4 text-center text-sm text-gray-500">{t('header.notifications.noNotifications')}</p>
+                            <p className="p-4 text-center text-sm text-[var(--foreground-muted)]">{t('header.notifications.noNotifications')}</p>
                         )}
                     </div>
                 </div>
@@ -184,20 +197,20 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onToggleSidebar, isSidebarOp
 
 
         <div className="relative" ref={profileDropdownRef}>
-            <button onClick={() => setProfileDropdownOpen(prev => !prev)} className="flex items-center gap-2 cursor-pointer p-1 rounded-full hover:bg-gray-100 transition-colors">
+            <button onClick={() => setProfileDropdownOpen(prev => !prev)} className="flex items-center gap-2 cursor-pointer p-1 rounded-full hover:bg-[var(--accent)] transition-colors">
               <img
                 src="https://picsum.photos/id/237/200/200"
                 alt="Admin Avatar"
                 className="h-10 w-10 rounded-full object-cover"
               />
               <div className="hidden md:block text-left">
-                <p className="font-semibold text-gray-800">{currentUserRole}</p>
-                <p className="text-xs text-gray-500">{`${currentUserRole.toLowerCase()}@healthcrm.com`}</p>
+                <p className="font-semibold text-[var(--card-foreground)]">{currentUserRole}</p>
+                <p className="text-xs text-[var(--foreground-muted)]">{`${currentUserRole.toLowerCase()}@healthcrm.com`}</p>
               </div>
-               <ChevronDown className={`h-5 w-5 text-gray-500 transition-transform hidden md:block ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
+               <ChevronDown className={`h-5 w-5 text-[var(--foreground-muted)] transition-transform hidden md:block ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             {isProfileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1 animate-fade-in-down">
+                <div className="absolute right-0 mt-2 w-48 bg-[var(--popover-background)] border border-[var(--border)] rounded-lg shadow-lg z-50 py-1 animate-fade-in-down">
                     <a
                         href="#"
                         onClick={(e) => {
@@ -205,7 +218,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onToggleSidebar, isSidebarOp
                             setActivePage('Profile');
                             setProfileDropdownOpen(false);
                         }}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-[var(--popover-foreground)] hover:bg-[var(--accent)] transition-colors"
                     >
                         <UserCircle size={16} />
                         <span>{t('sidebar.profile')}</span>
@@ -216,7 +229,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, onToggleSidebar, isSidebarOp
                             e.preventDefault();
                             onLogout();
                         }}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-[var(--popover-foreground)] hover:bg-[var(--accent)] transition-colors"
                     >
                         <LogOut size={16} />
                         <span>{t('sidebar.logout')}</span>

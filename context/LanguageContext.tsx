@@ -1,4 +1,4 @@
-import React, { createContext, useState, ReactNode } from 'react';
+import React, { createContext, useState, ReactNode, useEffect } from 'react';
 import { Language } from '../types';
 import { translations } from '../lib/translations';
 
@@ -42,6 +42,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     </LanguageContext.Provider>
   );
 };
+
 
 // --- Settings Context ---
 const SETTINGS_STORAGE_KEY = 'healthcrm_settings';

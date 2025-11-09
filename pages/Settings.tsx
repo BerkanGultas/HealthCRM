@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { useSettings } from '../hooks/useLanguage';
-import { Facebook, Instagram, MessageCircle, UploadCloud, CheckCircle, XCircle, ChevronDown, CreditCard } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import { Facebook, Instagram, MessageCircle, UploadCloud, CheckCircle, XCircle, ChevronDown, CreditCard, FileText } from 'lucide-react';
 
 // Using a simplified WhatsApp icon as it's not in lucide
 const WhatsAppIcon = () => (
@@ -298,7 +299,7 @@ const IntegrationCard: React.FC<{
 }> = ({ platformName, icon, isConnected, onToggle, children, isOpen }) => {
     const { t } = useLanguage();
     return (
-        <div className="bg-gray-50/50 p-4 rounded-lg border border-gray-200">
+        <div className="bg-[var(--input-background)] p-4 rounded-lg border border-[var(--border)]">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     {icon}
@@ -306,21 +307,21 @@ const IntegrationCard: React.FC<{
                 </div>
                 <div className="flex items-center gap-3">
                     {isConnected ? (
-                        <span className="flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                        <span className="flex items-center gap-1 text-xs font-semibold text-green-500 bg-green-500/10 px-2 py-1 rounded-full">
                             <CheckCircle size={14} /> {t('settings.connected')}
                         </span>
                     ) : (
-                        <span className="flex items-center gap-1 text-xs font-semibold text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
+                        <span className="flex items-center gap-1 text-xs font-semibold text-[var(--foreground-muted)] bg-[var(--accent)] px-2 py-1 rounded-full">
                             <XCircle size={14} /> Disconnected
                         </span>
                     )}
-                    <button onClick={onToggle} className="p-1 text-gray-500 hover:text-gray-800 rounded-full hover:bg-gray-200 transition-colors">
+                    <button onClick={onToggle} className="p-1 text-[var(--foreground-muted)] hover:text-[var(--foreground)] rounded-full hover:bg-[var(--accent)] transition-colors">
                        <ChevronDown size={20} className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
                     </button>
                 </div>
             </div>
             {isOpen && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="mt-4 pt-4 border-t border-[var(--border)]">
                    {children}
                 </div>
             )}
@@ -332,6 +333,7 @@ const COMPANY_INFO_STORAGE_KEY = 'healthcrm_company_info';
 
 const Settings: React.FC = () => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const { logoUrl, setLogoUrl } = useSettings();
     const [openIntegration, setOpenIntegration] = useState<string | null>(null);
 
@@ -379,19 +381,24 @@ const Settings: React.FC = () => {
         whatsapp: { connected: true, phoneId: '112233445566778' },
         webchat: { connected: true, snippet: webChatSnippet },
         virtualpos: { connected: false, apiKey: '', secretKey: '', merchantId: '' },
+        gib: { connected: false, username: '', password: '', eFaturaPrefix: '', eArsivPrefix: '' },
     });
     
     const handleToggleIntegration = (platformKey: string) => {
         setOpenIntegration(prev => prev === platformKey ? null : platformKey);
     };
+    
+    const snippetTextareaClass = theme === 'dark' 
+      ? "w-full bg-stone-900 text-green-400 font-mono text-sm border border-[var(--border)] rounded-md p-2 mt-1"
+      : "w-full bg-gray-100 text-gray-800 font-mono text-sm border border-[var(--border)] rounded-md p-2 mt-1";
 
     return (
         <div className="space-y-6">
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <div className="bg-[var(--card-background)] p-6 rounded-lg border border-[var(--border)]">
                 <h3 className="text-lg font-semibold mb-4">{t('settings.companyInfo')}</h3>
                 <div className="space-y-4">
                     <div>
-                        <label htmlFor="address" className="block text-sm font-medium text-gray-700">{t('settings.address')}</label>
+                        <label htmlFor="address" className="block text-sm font-medium text-[var(--foreground-muted)]">{t('settings.address')}</label>
                         <input
                             type="text"
                             id="address"
@@ -399,11 +406,11 @@ const Settings: React.FC = () => {
                             value={companyInfo.address}
                             onChange={handleCompanyInfoChange}
                             placeholder="123 Health St, Wellness City, 12345"
-                            className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#128c7e] focus:border-transparent transition-colors"
+                            className="mt-1 block w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-colors"
                         />
                     </div>
                     <div>
-                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700">{t('settings.phone')}</label>
+                        <label htmlFor="phone" className="block text-sm font-medium text-[var(--foreground-muted)]">{t('settings.phone')}</label>
                         <input
                             type="text"
                             id="phone"
@@ -411,11 +418,11 @@ const Settings: React.FC = () => {
                             value={companyInfo.phone}
                             onChange={handleCompanyInfoChange}
                             placeholder="(123) 456-7890"
-                            className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#128c7e] focus:border-transparent transition-colors"
+                            className="mt-1 block w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-colors"
                         />
                     </div>
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">{t('settings.email')}</label>
+                        <label htmlFor="email" className="block text-sm font-medium text-[var(--foreground-muted)]">{t('settings.email')}</label>
                         <input
                             type="email"
                             id="email"
@@ -423,41 +430,41 @@ const Settings: React.FC = () => {
                             value={companyInfo.email}
                             onChange={handleCompanyInfoChange}
                             placeholder="contact@healthcrm.com"
-                            className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#128c7e] focus:border-transparent transition-colors"
+                            className="mt-1 block w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-colors"
                         />
                     </div>
                 </div>
                 <div className="flex justify-end mt-6">
-                    <button onClick={handleSaveCompanyInfo} className="px-4 py-2 rounded-lg bg-[#128c7e] text-white hover:bg-[#075e54] transition-colors">{t('settings.save')}</button>
+                    <button onClick={handleSaveCompanyInfo} className="px-4 py-2 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-hover)] transition-colors">{t('settings.save')}</button>
                 </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <div className="bg-[var(--card-background)] p-6 rounded-lg border border-[var(--border)]">
                 <h3 className="text-lg font-semibold mb-4">{t('settings.logoSettings')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                     <div>
-                        <label htmlFor="logoUrl" className="block text-sm font-medium text-gray-700">{t('settings.logoUrl')}</label>
+                        <label htmlFor="logoUrl" className="block text-sm font-medium text-[var(--foreground-muted)]">{t('settings.logoUrl')}</label>
                         <input
                             type="text"
                             id="logoUrl"
                             value={logoUrl}
                             onChange={(e) => setLogoUrl(e.target.value)}
                             placeholder="https://example.com/logo.png"
-                            className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#128c7e] focus:border-transparent transition-colors"
+                            className="mt-1 block w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-colors"
                         />
-                         <button className="mt-4 w-full md:w-auto flex items-center justify-center gap-2 bg-[#128c7e] text-white px-4 py-2 rounded-lg hover:bg-[#075e54] transition-colors">
+                         <button className="mt-4 w-full md:w-auto flex items-center justify-center gap-2 bg-[var(--primary)] text-[var(--primary-foreground)] px-4 py-2 rounded-lg hover:bg-[var(--primary-hover)] transition-colors">
                             <UploadCloud size={18} />
                             <span>{t('settings.uploadLogo')}</span>
                         </button>
                     </div>
                     <div className="text-center">
-                        <p className="text-sm font-medium text-gray-700 mb-2">{t('settings.logoPreview')}</p>
-                        <div className="h-24 flex items-center justify-center bg-gray-100 rounded-md border-2 border-dashed border-gray-300 p-2">
+                        <p className="text-sm font-medium text-[var(--foreground-muted)] mb-2">{t('settings.logoPreview')}</p>
+                        <div className="h-24 flex items-center justify-center bg-[var(--background)] rounded-md border-2 border-dashed border-[var(--border)] p-2">
                            {logoUrl ? (
                                <img src={logoUrl} alt="Logo Preview" className="max-h-20 object-contain"/>
                            ) : (
-                                <h1 className="text-2xl font-bold text-gray-800">
-                                    <span className="text-[#128c7e]">Health</span>CRM
+                                <h1 className="text-2xl font-bold text-[var(--card-foreground)]">
+                                    <span className="text-[var(--primary)]">Health</span>CRM
                                 </h1>
                            )}
                         </div>
@@ -465,7 +472,7 @@ const Settings: React.FC = () => {
                 </div>
             </div>
             
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <div className="bg-[var(--card-background)] p-6 rounded-lg border border-[var(--border)]">
                 <h3 className="text-lg font-semibold mb-4">{t('settings.paymentIntegrations')}</h3>
                  <div className="space-y-4">
                     <IntegrationCard
@@ -477,24 +484,54 @@ const Settings: React.FC = () => {
                     >
                        <div className="space-y-3">
                            <div>
-                               <label className="text-sm font-medium text-gray-600">{t('settings.apiKey')}</label>
-                               <input type="text" placeholder="Enter API Key" className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 mt-1" />
+                               <label className="text-sm font-medium text-[var(--foreground-muted)]">{t('settings.apiKey')}</label>
+                               <input type="text" placeholder="Enter API Key" className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1" />
                            </div>
                             <div>
-                               <label className="text-sm font-medium text-gray-600">{t('settings.secretKey')}</label>
-                               <input type="password" placeholder="Enter Secret Key" className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 mt-1" />
+                               <label className="text-sm font-medium text-[var(--foreground-muted)]">{t('settings.secretKey')}</label>
+                               <input type="password" placeholder="Enter Secret Key" className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1" />
                            </div>
                            <div>
-                               <label className="text-sm font-medium text-gray-600">{t('settings.merchantId')}</label>
-                               <input type="text" placeholder="Enter Merchant ID" className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 mt-1" />
+                               <label className="text-sm font-medium text-[var(--foreground-muted)]">{t('settings.merchantId')}</label>
+                               <input type="text" placeholder="Enter Merchant ID" className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1" />
                            </div>
-                           <button className="px-4 py-2 rounded-lg bg-[#128c7e] text-white hover:bg-[#075e54] transition-colors">{t('settings.save')}</button>
+                           <button className="px-4 py-2 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-hover)] transition-colors">{t('settings.save')}</button>
                        </div>
+                    </IntegrationCard>
+
+                    <IntegrationCard
+                        platformName={t('settings.platform.gib')}
+                        icon={<FileText className="w-6 h-6 text-indigo-500" />}
+                        isConnected={integrations.gib.connected}
+                        isOpen={openIntegration === 'gib'}
+                        onToggle={() => handleToggleIntegration('gib')}
+                    >
+                        <div className="space-y-3">
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-muted)]">{t('settings.gibUsername')}</label>
+                                <input type="text" placeholder="Enter GIB Username" className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-muted)]">{t('settings.gibPassword')}</label>
+                                <input type="password" placeholder="Enter GIB Password" className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm font-medium text-[var(--foreground-muted)]">{t('settings.eFaturaPrefix')}</label>
+                                    <input type="text" placeholder="e.g., ABC" className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1" />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-[var(--foreground-muted)]">{t('settings.eArsivPrefix')}</label>
+                                    <input type="text" placeholder="e.g., XYZ" className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1" />
+                                </div>
+                            </div>
+                            <button className="px-4 py-2 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-hover)] transition-colors">{t('settings.save')}</button>
+                        </div>
                     </IntegrationCard>
                  </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <div className="bg-[var(--card-background)] p-6 rounded-lg border border-[var(--border)]">
                 <h3 className="text-lg font-semibold mb-4">{t('settings.messagingPlatforms')}</h3>
                 <div className="space-y-4">
                     <IntegrationCard
@@ -506,14 +543,14 @@ const Settings: React.FC = () => {
                     >
                        <div className="space-y-3">
                            <div>
-                               <label className="text-sm font-medium text-gray-600">{t('settings.appId')}</label>
-                               <input type="text" defaultValue={integrations.facebook.appId} className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 mt-1" />
+                               <label className="text-sm font-medium text-[var(--foreground-muted)]">{t('settings.appId')}</label>
+                               <input type="text" defaultValue={integrations.facebook.appId} className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1" />
                            </div>
                             <div>
-                               <label className="text-sm font-medium text-gray-600">{t('settings.pageId')}</label>
-                               <input type="text" defaultValue={integrations.facebook.pageId} className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 mt-1" />
+                               <label className="text-sm font-medium text-[var(--foreground-muted)]">{t('settings.pageId')}</label>
+                               <input type="text" defaultValue={integrations.facebook.pageId} className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1" />
                            </div>
-                           <button className="px-4 py-2 rounded-lg bg-[#128c7e] text-white hover:bg-[#075e54] transition-colors">{t('settings.save')}</button>
+                           <button className="px-4 py-2 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-hover)] transition-colors">{t('settings.save')}</button>
                        </div>
                     </IntegrationCard>
 
@@ -526,8 +563,8 @@ const Settings: React.FC = () => {
                     >
                        <div className="space-y-3">
                            <div>
-                               <label className="text-sm font-medium text-gray-600">{t('settings.businessAccountId')}</label>
-                               <input type="text" placeholder="Enter Business Account ID" className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 mt-1" />
+                               <label className="text-sm font-medium text-[var(--foreground-muted)]">{t('settings.businessAccountId')}</label>
+                               <input type="text" placeholder="Enter Business Account ID" className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1" />
                            </div>
                            <button className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">{t('settings.connect')}</button>
                        </div>
@@ -542,29 +579,29 @@ const Settings: React.FC = () => {
                     >
                          <div className="space-y-3">
                            <div>
-                               <label className="text-sm font-medium text-gray-600">{t('settings.phoneNumberId')}</label>
-                               <input type="text" defaultValue={integrations.whatsapp.phoneId} className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 mt-1" />
+                               <label className="text-sm font-medium text-[var(--foreground-muted)]">{t('settings.phoneNumberId')}</label>
+                               <input type="text" defaultValue={integrations.whatsapp.phoneId} className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1" />
                            </div>
-                           <button className="px-4 py-2 rounded-lg bg-[#128c7e] text-white hover:bg-[#075e54] transition-colors">{t('settings.save')}</button>
+                           <button className="px-4 py-2 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-hover)] transition-colors">{t('settings.save')}</button>
                        </div>
                     </IntegrationCard>
 
                      <IntegrationCard
                         platformName={t('settings.platform.webchat')}
-                        icon={<MessageCircle className="w-6 h-6 text-[#128c7e]" />}
+                        icon={<MessageCircle className="w-6 h-6 text-[var(--primary)]" />}
                         isConnected={integrations.webchat.connected}
                         isOpen={openIntegration === 'webchat'}
                         onToggle={() => handleToggleIntegration('webchat')}
                     >
                         <div>
-                           <label className="text-sm font-medium text-gray-600">{t('settings.widgetSnippet')}</label>
+                           <label className="text-sm font-medium text-[var(--foreground-muted)]">{t('settings.widgetSnippet')}</label>
                             <textarea
                                 rows={5}
                                 readOnly
                                 value={integrations.webchat.snippet}
-                                className="w-full bg-gray-800 text-green-300 font-mono text-sm border border-gray-600 rounded-md p-2 mt-1"
+                                className={snippetTextareaClass}
                             />
-                             <button onClick={() => navigator.clipboard.writeText(integrations.webchat.snippet)} className="mt-2 px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors">{t('settings.copyCode')}</button>
+                             <button onClick={() => navigator.clipboard.writeText(integrations.webchat.snippet)} className="mt-2 px-4 py-2 rounded-lg bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-opacity-75 transition-colors">{t('settings.copyCode')}</button>
                         </div>
                     </IntegrationCard>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
+import { useTheme } from '../context/ThemeContext';
 import { Customer, Service, Currency } from '../types';
 import { Link, PlusCircle, Search, Copy, X, Check } from 'lucide-react';
 
@@ -22,6 +23,7 @@ interface GeneratedLink {
     id: string;
     customer: Customer;
     amount: number;
+    totalAmount?: number;
     currency: Currency;
     status: 'Paid' | 'Pending' | 'Expired';
     date: string;
@@ -31,44 +33,67 @@ interface GeneratedLink {
 
 const mockGeneratedLinks: GeneratedLink[] = [
     { id: 'LNK001', customer: mockCustomers[0], amount: 3500, currency: 'USD', status: 'Paid', date: '2024-07-22', url: `${window.location.origin}${window.location.pathname}?customer=Alice%20Johnson&services=Hair%20Transplant%20(FUE)&amount=3500&currency=USD`, createdBy: 'Admin User' },
-    { id: 'LNK002', customer: mockCustomers[1], amount: 10000, currency: 'EUR', status: 'Pending', date: '2024-07-23', url: `${window.location.origin}${window.location.pathname}?customer=Bob%20Williams&services=Dental%20Implants%20(All-on-4)&amount=10000&currency=EUR`, createdBy: 'John Smith' },
+    { id: 'LNK002', customer: mockCustomers[1], amount: 1000, totalAmount: 10000, currency: 'EUR', status: 'Pending', date: '2024-07-23', url: `${window.location.origin}${window.location.pathname}?customer=Bob%20Williams&services=Dental%20Implants%20(All-on-4)&amount=1000&currency=EUR`, createdBy: 'John Smith' },
     { id: 'LNK003', customer: mockCustomers[2], amount: 5500, currency: 'USD', status: 'Expired', date: '2024-07-20', url: `${window.location.origin}${window.location.pathname}?customer=Charlie%20Brown&services=Rhinoplasty,%20Teeth%20Whitening&amount=5500&currency=USD`, createdBy: 'Emily White' },
 ];
 
 // --- MODAL COMPONENT --- //
 const CreateLinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onLinkCreated: (link: GeneratedLink) => void }> = ({ isOpen, onClose, onLinkCreated }) => {
     const { t, language } = useLanguage();
+    const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('full');
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [selectedServices, setSelectedServices] = useState<Service[]>([]);
-    const [amount, setAmount] = useState<number>(0);
+    const [totalAmount, setTotalAmount] = useState<number>(0);
+    const [depositAmount, setDepositAmount] = useState<number>(0);
     const [currency, setCurrency] = useState<Currency>('USD');
 
     useEffect(() => {
-        const total = selectedServices.reduce((sum, service) => sum + service.price, 0);
-        setAmount(total);
-    }, [selectedServices]);
+        if (paymentType === 'full') {
+            const total = selectedServices.reduce((sum, service) => sum + service.price, 0);
+            setTotalAmount(total);
+        }
+    }, [selectedServices, paymentType]);
+    
+    const remainingAmount = useMemo(() => {
+        return totalAmount - depositAmount;
+    }, [totalAmount, depositAmount]);
 
     const handleGenerateLink = () => {
-        if (!selectedCustomer || amount <= 0) {
+        const isDeposit = paymentType === 'deposit';
+        const linkAmount = isDeposit ? depositAmount : totalAmount;
+
+        if (!selectedCustomer || linkAmount <= 0) {
             alert("Please select a customer and ensure the amount is greater than zero.");
             return;
         }
+        if (isDeposit && totalAmount <= 0) {
+            alert("Please enter a total amount for the deposit.");
+            return;
+        }
+        if (isDeposit && depositAmount > totalAmount) {
+            alert("Deposit amount cannot be greater than the total amount.");
+            return;
+        }
+
         const newLink: GeneratedLink = {
             id: `LNK${Date.now()}`,
             customer: selectedCustomer,
-            amount: amount,
+            amount: linkAmount,
+            totalAmount: isDeposit ? totalAmount : undefined,
             currency: currency,
             status: 'Pending',
             date: new Date().toISOString().split('T')[0],
-            url: `${window.location.origin}${window.location.pathname}?customer=${encodeURIComponent(selectedCustomer.name)}&services=${encodeURIComponent(selectedServices.map(s => s.name).join(', '))}&amount=${amount}&currency=${currency}`,
+            url: `${window.location.origin}${window.location.pathname}?customer=${encodeURIComponent(selectedCustomer.name)}&services=${encodeURIComponent(selectedServices.map(s => s.name).join(', '))}&amount=${linkAmount}&currency=${currency}`,
             createdBy: 'Admin User' // In a real app, this would be the logged-in user
         };
         onLinkCreated(newLink);
         // Reset form
         setSelectedCustomer(null);
         setSelectedServices([]);
-        setAmount(0);
+        setTotalAmount(0);
+        setDepositAmount(0);
         setCurrency('USD');
+        setPaymentType('full');
     };
     
     const formatCurrency = (price: number, curr: Currency) => new Intl.NumberFormat(language, { style: 'currency', currency: curr }).format(price);
@@ -77,60 +102,104 @@ const CreateLinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onLinkCr
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 transition-opacity duration-300">
-            <div className="bg-white rounded-lg p-6 w-full max-w-4xl border border-gray-200 shadow-xl transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale">
-                <div className="flex justify-between items-center mb-6 border-b pb-4">
+            <div className="bg-[var(--card-background)] rounded-lg p-6 w-full max-w-4xl border border-[var(--border)] shadow-xl transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale">
+                <div className="flex justify-between items-center mb-6 border-b border-[var(--border)] pb-4">
                     <h2 className="text-xl font-semibold">{t('createLink.modalTitle')}</h2>
-                    <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100"><X size={24}/></button>
+                    <button onClick={onClose} className="p-1 rounded-full hover:bg-[var(--accent)]"><X size={24}/></button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Left Column: Form */}
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">{t('createLink.selectCustomer')}</label>
-                            <select value={selectedCustomer?.id || ''} onChange={(e) => setSelectedCustomer(mockCustomers.find(c => c.id === Number(e.target.value)) || null)} className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#128c7e] focus:border-transparent">
+                            <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-1">{t('createLink.selectCustomer')}</label>
+                            <select value={selectedCustomer?.id || ''} onChange={(e) => setSelectedCustomer(mockCustomers.find(c => c.id === Number(e.target.value)) || null)} className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent">
                                 <option value="" disabled>{t('createLink.searchCustomer')}</option>
                                 {mockCustomers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">{t('createLink.selectServices')}</label>
+                            <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-1">{t('createLink.selectServices')}</label>
                              <select value={''} onChange={(e) => {
                                 const service = mockServices.find(s => s.id === e.target.value);
                                 if(service && !selectedServices.find(ss => ss.id === service.id)) setSelectedServices(prev => [...prev, service]);
-                            }} className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-[#128c7e] focus:border-transparent">
+                            }} className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent">
                                 <option value="" disabled>{t('createLink.searchService')}</option>
                                 {mockServices.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
                         </div>
+                        
+                        <div>
+                             <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-2">{t('createLink.paymentAmount')}</label>
+                             <div className="flex items-center gap-4">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="paymentType" value="full" checked={paymentType === 'full'} onChange={() => setPaymentType('full')} className="h-4 w-4 text-[var(--primary)] focus:ring-[var(--primary)]"/>
+                                    <span>{t('createLink.fullAmountOption')}</span>
+                                </label>
+                                 <label className="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="paymentType" value="deposit" checked={paymentType === 'deposit'} onChange={() => setPaymentType('deposit')} className="h-4 w-4 text-[var(--primary)] focus:ring-[var(--primary)]"/>
+                                    <span>{t('createLink.deposit')}</span>
+                                </label>
+                             </div>
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-1">{t('createLink.totalAmount')}</label>
-                                <input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="w-full bg-gray-50 border border-gray-300 rounded-md p-2"/>
+                           <div>
+                                <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-1">{t('createLink.totalAmount')}</label>
+                                <input type="number" value={totalAmount} onChange={(e) => setTotalAmount(Number(e.target.value))} disabled={paymentType === 'full'} className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 disabled:bg-opacity-50 disabled:cursor-not-allowed"/>
                             </div>
+                            {paymentType === 'deposit' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-1">{t('createLink.depositAmount')}</label>
+                                    <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(Number(e.target.value))} className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2"/>
+                                </div>
+                            )}
                             <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-1">{t('createLink.currency')}</label>
-                                <select value={currency} onChange={(e) => setCurrency(e.target.value as Currency)} className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 h-[42px]">
+                                <label className="block text-sm font-medium text-[var(--foreground-muted)] mb-1">{t('createLink.currency')}</label>
+                                <select value={currency} onChange={(e) => setCurrency(e.target.value as Currency)} className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 h-[42px]">
                                     <option>USD</option><option>EUR</option><option>GBP</option><option>TRY</option>
                                 </select>
                             </div>
                         </div>
+
                     </div>
                     {/* Right Column: Summary */}
-                    <div className="bg-gray-50/80 p-4 rounded-lg border border-gray-200/80">
+                    <div className="bg-[var(--background)] p-4 rounded-lg border border-[var(--border)]">
                          <h3 className="text-lg font-semibold mb-3">{t('createLink.selectedServices')}</h3>
                          <div className="space-y-2 max-h-48 overflow-y-auto">
                             {selectedServices.length > 0 ? selectedServices.map(s => (
-                                <div key={s.id} className="flex justify-between items-center bg-white p-2 rounded-md border">
-                                    <div><p className="text-sm font-medium">{s.name}</p><p className="text-sm text-gray-500">{formatCurrency(s.price, s.currency)}</p></div>
-                                    <button onClick={() => setSelectedServices(prev => prev.filter(ps => ps.id !== s.id))} className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-100 rounded-full"><X size={16}/></button>
+                                <div key={s.id} className="flex justify-between items-center bg-[var(--card-background)] p-2 rounded-md border border-[var(--border)]">
+                                    <div><p className="text-sm font-medium">{s.name}</p><p className="text-sm text-[var(--foreground-muted)]">{formatCurrency(s.price, s.currency)}</p></div>
+                                    <button onClick={() => setSelectedServices(prev => prev.filter(ps => ps.id !== s.id))} className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-full"><X size={16}/></button>
                                 </div>
-                            )) : <p className="text-sm text-gray-500 text-center py-4">{t('createLink.noServicesSelected')}</p>}
+                            )) : <p className="text-sm text-[var(--foreground-muted)] text-center py-4">{t('createLink.noServicesSelected')}</p>}
                          </div>
-                         <div className="mt-4 pt-4 border-t-2 border-dashed"><div className="flex justify-between items-center font-bold text-lg"><span>{t('createLink.totalAmount')}:</span><span>{formatCurrency(amount, currency)}</span></div></div>
+                         <div className="mt-4 pt-4 border-t-2 border-dashed border-[var(--border)]">
+                             {paymentType === 'deposit' ? (
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between items-center text-[var(--foreground-muted)]">
+                                        <span>{t('createLink.totalAmount')}</span>
+                                        <span>{formatCurrency(totalAmount, currency)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[var(--foreground-muted)]">
+                                        <span>{t('createLink.depositAmount')}</span>
+                                        <span>- {formatCurrency(depositAmount, currency)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center font-bold text-base pt-2 border-t border-[var(--border)]">
+                                        <span>{t('createLink.remainingAmount')}</span>
+                                        <span>{formatCurrency(remainingAmount, currency)}</span>
+                                    </div>
+                                </div>
+                             ) : (
+                                <div className="flex justify-between items-center font-bold text-lg">
+                                    <span>{t('createLink.totalAmount')}:</span>
+                                    <span>{formatCurrency(totalAmount, currency)}</span>
+                                </div>
+                             )}
+                         </div>
                     </div>
                 </div>
-                <div className="mt-6 pt-4 border-t">
-                    <button onClick={handleGenerateLink} className="w-full flex items-center justify-center gap-2 bg-[#128c7e] text-white px-4 py-3 rounded-lg hover:bg-[#075e54] transition-colors font-semibold text-lg">
+                <div className="mt-6 pt-4 border-t border-[var(--border)]">
+                    <button onClick={handleGenerateLink} className="w-full flex items-center justify-center gap-2 bg-[var(--primary)] text-[var(--primary-foreground)] px-4 py-3 rounded-lg hover:bg-[var(--primary-hover)] transition-colors font-semibold text-lg">
                         <Link size={20}/><span>{t('createLink.generateLink')}</span>
                     </button>
                 </div>
@@ -146,6 +215,7 @@ const CreateLinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onLinkCr
 // --- MAIN PAGE COMPONENT --- //
 const CreateLink: React.FC = () => {
     const { t, language } = useLanguage();
+    const { theme } = useTheme();
     const [links, setLinks] = useState<GeneratedLink[]>(mockGeneratedLinks);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -171,32 +241,42 @@ const CreateLink: React.FC = () => {
       }, 2000);
     };
     
-    const getStatusClass = (status: 'Paid' | 'Pending' | 'Expired') => ({
-        'Paid': 'bg-green-500/20 text-green-600',
-        'Pending': 'bg-yellow-500/20 text-yellow-600',
-        'Expired': 'bg-red-500/20 text-red-600',
-    }[status]);
+    const getStatusClass = (status: 'Paid' | 'Pending' | 'Expired') => {
+        const statusClasses = {
+            light: {
+                Paid: 'bg-green-500/20 text-green-600',
+                Pending: 'bg-yellow-500/20 text-yellow-600',
+                Expired: 'bg-red-500/20 text-red-600',
+            },
+            dark: {
+                Paid: 'bg-green-400/20 text-green-400',
+                Pending: 'bg-yellow-400/20 text-yellow-400',
+                Expired: 'bg-red-400/20 text-red-400',
+            }
+        };
+        return statusClasses[theme][status];
+    };
 
     const formatCurrency = (price: number, curr: Currency) => new Intl.NumberFormat(language, { style: 'currency', currency: curr }).format(price);
 
     return (
         <>
             <CreateLinkModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onLinkCreated={handleAddLink} />
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <div className="flex justify-between items-center mb-6">
+            <div className="bg-[var(--card-background)] p-6 rounded-lg border border-[var(--border)]">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <h2 className="text-xl font-semibold">{t('createLink.title')}</h2>
-                    <div className="flex items-center gap-4">
-                        <div className="relative">
+                    <div className="w-full md:w-auto flex flex-col sm:flex-row items-center gap-4">
+                        <div className="relative w-full sm:w-auto">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
-                            <input type="text" placeholder={t('createLink.searchByCustomer')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-64 bg-gray-100 border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:ring-[#128c7e] focus:border-[#128c7e]"/>
+                            <input type="text" placeholder={t('createLink.searchByCustomer')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full sm:w-64 bg-[var(--input-background)] border border-[var(--border)] rounded-lg pl-10 pr-4 py-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"/>
                         </div>
-                        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-gray-100 border border-gray-300 rounded-lg py-2 px-3 focus:ring-[#128c7e] focus:border-[#128c7e]">
+                        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full sm:w-auto bg-[var(--input-background)] border border-[var(--border)] rounded-lg py-2 px-3 focus:ring-[var(--primary)] focus:border-[var(--primary)]">
                             <option value="All">{t('createLink.allStatuses')}</option>
                             <option value="Paid">{t('createLink.statusPaid')}</option>
                             <option value="Pending">{t('createLink.statusPending')}</option>
                             <option value="Expired">{t('createLink.statusExpired')}</option>
                         </select>
-                        <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 bg-[#128c7e] text-white px-4 py-2 rounded-lg hover:bg-[#075e54] transition-colors">
+                        <button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[var(--primary)] text-[var(--primary-foreground)] px-4 py-2 rounded-lg hover:bg-[var(--primary-hover)] transition-colors">
                             <PlusCircle size={18}/><span>{t('createLink.createNewLink')}</span>
                         </button>
                     </div>
@@ -204,7 +284,7 @@ const CreateLink: React.FC = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-[var(--border)]">
                                 <th className="p-4 font-semibold">{t('createLink.tableHeaderCustomer')}</th>
                                 <th className="p-4 font-semibold">{t('createLink.tableHeaderAmount')}</th>
                                 <th className="p-4 font-semibold">{t('createLink.tableHeaderStatus')}</th>
@@ -215,25 +295,32 @@ const CreateLink: React.FC = () => {
                         </thead>
                         <tbody>
                             {filteredLinks.map(link => (
-                                <tr key={link.id} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50">
+                                <tr key={link.id} className="border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--accent)]/50">
                                     <td className="p-4">
                                         <div className="flex items-center gap-3">
                                             <img src={link.customer.avatarUrl} alt={link.customer.name} className="w-10 h-10 rounded-full object-cover"/>
                                             <div>
                                                 <p className="font-semibold">{link.customer.name}</p>
-                                                <p className="text-sm text-gray-500">{link.customer.email}</p>
+                                                <p className="text-sm text-[var(--foreground-muted)]">{link.customer.email}</p>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="p-4 font-medium">{formatCurrency(link.amount, link.currency)}</td>
+                                    <td className="p-4 font-medium">
+                                        {formatCurrency(link.amount, link.currency)}
+                                        {link.totalAmount && link.totalAmount > link.amount && (
+                                            <span className="text-xs text-[var(--foreground-muted)] block">
+                                                / {formatCurrency(link.totalAmount, link.currency)}
+                                            </span>
+                                        )}
+                                    </td>
                                     <td className="p-4"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusClass(link.status)}`}>{t(`createLink.status${link.status}`)}</span></td>
-                                    <td className="p-4 text-gray-500">{link.date}</td>
-                                    <td className="p-4 text-gray-500">{link.createdBy}</td>
+                                    <td className="p-4 text-[var(--foreground-muted)]">{link.date}</td>
+                                    <td className="p-4 text-[var(--foreground-muted)]">{link.createdBy}</td>
                                     <td className="p-4 text-center">
                                         <div className="relative inline-flex items-center justify-center">
                                             <button 
                                                 onClick={() => handleCopyClick(link)} 
-                                                className="p-2 text-gray-500 hover:text-[#128c7e] hover:bg-[#128c7e]/10 rounded-full transition-colors" 
+                                                className="p-2 text-[var(--foreground-muted)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-full transition-colors" 
                                                 title={t('createLink.copyUrl')}
                                             >
                                                 {copiedLinkId === link.id ? (

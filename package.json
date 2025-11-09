@@ -1,5 +1,5 @@
 {
-  "name": "health-tourism-crm",
+  "name": "health-crm",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,13 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@dataconnect/generated": "file:src/dataconnect-generated",
-    "@types/bcryptjs": "^2.4.6",
-    "bcryptjs": "^3.0.2",
-    "firebase": "^12.4.0",
-    "lucide-react": "^0.546.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "lucide-react": "^0.546.0",
     "recharts": "^3.3.0"
   },
   "devDependencies": {

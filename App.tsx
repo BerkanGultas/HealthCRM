@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { LanguageProvider, SettingsProvider } from './context/LanguageContext';
 import { ChatProvider } from './context/ChatContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
@@ -19,7 +19,7 @@ import LoginPage from './pages/LoginPage';
 import PaymentPage from './pages/PaymentPage';
 import { User } from './types';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activePage, setActivePage] = useState('Dashboard');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -32,11 +32,9 @@ const App: React.FC = () => {
 
   if (isPaymentPage) {
     return (
-      <LanguageProvider>
         <SettingsProvider>
           <PaymentPage />
         </SettingsProvider>
-      </LanguageProvider>
     );
   }
 
@@ -89,39 +87,57 @@ const App: React.FC = () => {
   const handleLogout = () => setIsAuthenticated(false);
 
   return (
-    <ChatProvider>
-      <LanguageProvider>
-        <SettingsProvider>
-            {!isAuthenticated ? (
-            <LoginPage onLogin={handleLogin} onGuestLogin={handleGuestLogin} />
-            ) : (
-            <div className="flex h-screen bg-[#ece5dd] text-gray-800">
-                <Sidebar 
-                activePage={activePage} 
-                setActivePage={setActivePage} 
-                isOpen={isSidebarOpen}
-                setIsOpen={setSidebarOpen}
-                onLogout={handleLogout}
-                currentUserRole={currentUserRole}
-                />
-                <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'}`}>
-                <Header 
-                    pageTitle={activePage} 
-                    onToggleSidebar={() => setSidebarOpen(!isSidebarOpen)} 
-                    isSidebarOpen={isSidebarOpen}
-                    setActivePage={setActivePage}
-                    onLogout={handleLogout} 
-                    currentUserRole={currentUserRole}
-                />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#ece5dd] p-6">
-                    {renderPage()}
-                </main>
-                </div>
-            </div>
+    <>
+        {!isAuthenticated ? (
+        <LoginPage onLogin={handleLogin} onGuestLogin={handleGuestLogin} />
+        ) : (
+        <div className="flex h-screen bg-[var(--background)] text-[var(--foreground)]">
+            <Sidebar 
+            activePage={activePage} 
+            setActivePage={setActivePage} 
+            isOpen={isSidebarOpen}
+            setIsOpen={setSidebarOpen}
+            onLogout={handleLogout}
+            currentUserRole={currentUserRole}
+            />
+            {/* Overlay for mobile */}
+            {isSidebarOpen && (
+              <div 
+                onClick={() => setSidebarOpen(false)} 
+                className="fixed inset-0 bg-black/50 z-20 md:hidden"
+                aria-hidden="true"
+              />
             )}
-        </SettingsProvider>
-      </LanguageProvider>
-    </ChatProvider>
+            <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 md:${isSidebarOpen ? 'ml-64' : 'ml-20'}`}>
+            <Header 
+                pageTitle={activePage} 
+                onToggleSidebar={() => setSidebarOpen(!isSidebarOpen)} 
+                isSidebarOpen={isSidebarOpen}
+                setActivePage={setActivePage}
+                onLogout={handleLogout} 
+                currentUserRole={currentUserRole}
+            />
+            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[var(--background)] p-4 sm:p-6">
+                {renderPage()}
+            </main>
+            </div>
+        </div>
+        )}
+    </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <ChatProvider>
+        <LanguageProvider>
+          <SettingsProvider>
+            <AppContent />
+          </SettingsProvider>
+        </LanguageProvider>
+      </ChatProvider>
+    </ThemeProvider>
   );
 };
 

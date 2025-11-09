@@ -13,6 +13,46 @@
       body {
         font-family: 'Outfit', sans-serif;
       }
+      
+      :root[data-theme='light'] {
+        --background: #ece5dd;
+        --foreground: #374151; /* gray-700 */
+        --foreground-muted: #6b7280; /* gray-500 */
+        --card-background: #ffffff;
+        --card-foreground: #1f2937; /* gray-800 */
+        --popover-background: #ffffff;
+        --popover-foreground: #1f2937;
+        --border: #e5e7eb; /* gray-200 */
+        --input-background: #f9fafb; /* gray-50 */
+        --primary: #128c7e;
+        --primary-hover: #075e54;
+        --primary-foreground: #ffffff;
+        --secondary: #25d366;
+        --secondary-foreground: #ffffff;
+        --accent: rgba(18, 140, 126, 0.1); /* #128c7e/10 */
+        --accent-foreground: #128c7e;
+        --destructive: #ef4444; /* red-500 */
+      }
+
+      :root[data-theme='dark'] {
+        --background: #1c1917; /* stone-900 */
+        --foreground: #d6d3d1; /* stone-300 */
+        --foreground-muted: #a8a29e; /* stone-400 */
+        --card-background: #292524; /* stone-800 */
+        --card-foreground: #f5f5f4; /* stone-100 */
+        --popover-background: #44403c; /* stone-700 */
+        --popover-foreground: #f5f5f4;
+        --border: #44403c; /* stone-700 */
+        --input-background: #1c1917; /* stone-900 */
+        --primary: #14b8a6; /* teal-500 */
+        --primary-hover: #0d9488; /* teal-600 */
+        --primary-foreground: #0c0a09; /* stone-950 */
+        --secondary: #4ade80; /* green-400 */
+        --secondary-foreground: #0c0a09;
+        --accent: rgba(20, 184, 166, 0.15); /* teal-500/15 */
+        --accent-foreground: #14b8a6;
+        --destructive: #f87171; /* red-400 */
+      }
     </style>
   <script type="importmap">
 {
@@ -26,7 +66,7 @@
 }
 </script>
 </head>
-  <body class="bg-[#ece5dd] text-gray-700">
+  <body class="bg-[var(--background)] text-[var(--foreground)]">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

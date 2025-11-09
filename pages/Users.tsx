@@ -1,9 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
+import { useTheme } from '../context/ThemeContext';
 import { User, MessagePlatform } from '../types';
 import { PlusCircle, Search, Pencil, Trash2, X } from 'lucide-react';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+
+const mockUsers: User[] = [
+  { id: 1, name: 'Admin User', email: 'admin@healthcrm.com', role: 'Admin', avatarUrl: 'https://picsum.photos/id/237/200/200', status: 'Active', platforms: [MessagePlatform.WhatsApp, MessagePlatform.Facebook, MessagePlatform.Instagram, MessagePlatform.WebChat] },
+  { id: 2, name: 'Jane Doe', email: 'jane.doe@healthcrm.com', role: 'Moderator', avatarUrl: 'https://picsum.photos/id/1/200/200', status: 'Active', platforms: [MessagePlatform.WhatsApp, MessagePlatform.Facebook] },
+  { id: 3, name: 'John Smith', email: 'john.smith@healthcrm.com', role: 'Agent', avatarUrl: 'https://picsum.photos/id/2/200/200', status: 'Inactive', platforms: [MessagePlatform.WhatsApp] },
+  { id: 4, name: 'Emily White', email: 'emily.white@healthcrm.com', role: 'Agent', avatarUrl: 'https://picsum.photos/id/3/200/200', status: 'Active', platforms: [MessagePlatform.Instagram, MessagePlatform.WebChat] },
+];
 
 const UserModal: React.FC<{
     isOpen: boolean;
@@ -12,12 +18,14 @@ const UserModal: React.FC<{
     userToEdit: User | null;
 }> = ({ isOpen, onClose, onSave, userToEdit }) => {
     const { t } = useLanguage();
+    // FIX: Explicitly type the state and initialize it with a consistent shape.
     const [userData, setUserData] = useState<Omit<User, 'id'>>(
         userToEdit || { name: '', email: '', role: 'Agent', status: 'Active', avatarUrl: `https://picsum.photos/seed/${Date.now()}/200/200`, platforms: [] }
     );
     const [password, setPassword] = useState('');
 
-    useEffect(() => {
+    React.useEffect(() => {
+        // FIX: Reset state when modal opens or user changes.
         setUserData(userToEdit || { name: '', email: '', role: 'Agent', status: 'Active', avatarUrl: `https://picsum.photos/seed/${Date.now()}/200/200`, platforms: [] });
         setPassword('');
     }, [userToEdit, isOpen]);
@@ -56,50 +64,50 @@ const UserModal: React.FC<{
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 w-full max-w-lg border border-gray-200 shadow-xl transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale">
+            <div className="bg-[var(--card-background)] rounded-lg p-6 w-full max-w-lg border border-[var(--border)] shadow-xl transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold">{userToEdit ? t('users.editModalTitle') : t('users.addModalTitle')}</h3>
-                    <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100"><X size={20}/></button>
+                    <button onClick={onClose} className="p-1 rounded-full hover:bg-[var(--accent)]"><X size={20}/></button>
                 </div>
                 <div className="space-y-4">
                      <div>
-                        <label className="text-sm text-gray-500 font-medium">{t('users.name')}</label>
-                        <input name="name" value={userData.name} onChange={handleChange} className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 mt-1" />
+                        <label className="text-sm text-[var(--foreground-muted)] font-medium">{t('users.name')}</label>
+                        <input name="name" value={userData.name} onChange={handleChange} className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1" />
                     </div>
                      <div>
-                        <label className="text-sm text-gray-500 font-medium">{t('users.password')}</label>
+                        <label className="text-sm text-[var(--foreground-muted)] font-medium">{t('users.password')}</label>
                         <input 
                             type="password" 
                             name="password" 
                             value={password} 
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder={userToEdit ? t('users.passwordPlaceholderEdit') : ""}
-                            className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 mt-1" 
+                            className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1" 
                         />
                     </div>
                      <div>
-                        <label className="text-sm text-gray-500 font-medium">{t('users.email')}</label>
-                        <input type="email" name="email" value={userData.email} onChange={handleChange} className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 mt-1" />
+                        <label className="text-sm text-[var(--foreground-muted)] font-medium">{t('users.email')}</label>
+                        <input type="email" name="email" value={userData.email} onChange={handleChange} className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1" />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-sm text-gray-500 font-medium">{t('users.role')}</label>
-                            <select name="role" value={userData.role} onChange={handleChange} className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 mt-1 h-[42px]">
+                            <label className="text-sm text-[var(--foreground-muted)] font-medium">{t('users.role')}</label>
+                            <select name="role" value={userData.role} onChange={handleChange} className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1 h-[42px]">
                                 <option value="Admin">Admin</option>
                                 <option value="Moderator">Moderator</option>
                                 <option value="Agent">Agent</option>
                             </select>
                         </div>
                         <div>
-                            <label className="text-sm text-gray-500 font-medium">{t('users.status')}</label>
-                             <select name="status" value={userData.status} onChange={handleChange} className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 mt-1 h-[42px]">
+                            <label className="text-sm text-[var(--foreground-muted)] font-medium">{t('users.status')}</label>
+                             <select name="status" value={userData.status} onChange={handleChange} className="w-full bg-[var(--input-background)] border border-[var(--border)] rounded-md p-2 mt-1 h-[42px]">
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
                             </select>
                         </div>
                     </div>
                      <div>
-                        <label className="text-sm text-gray-500 font-medium">{t('users.platforms')}</label>
+                        <label className="text-sm text-[var(--foreground-muted)] font-medium">{t('users.platforms')}</label>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2">
                             {Object.values(MessagePlatform).map(platform => (
                                 <label key={platform} className="flex items-center space-x-2 cursor-pointer">
@@ -107,17 +115,17 @@ const UserModal: React.FC<{
                                         type="checkbox"
                                         checked={userData.platforms?.includes(platform) || false}
                                         onChange={() => handlePlatformChange(platform)}
-                                        className="h-4 w-4 rounded border-gray-300 text-[#128c7e] focus:ring-[#128c7e]"
+                                        className="h-4 w-4 rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)] bg-[var(--input-background)]"
                                     />
-                                    <span className="text-gray-700">{platform}</span>
+                                    <span className="text-[var(--foreground)]">{platform}</span>
                                 </label>
                             ))}
                         </div>
                     </div>
                 </div>
                  <div className="flex justify-end gap-4 mt-6">
-                    <button onClick={onClose} className="px-4 py-2 rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">{t('users.cancel')}</button>
-                    <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-[#128c7e] text-white hover:bg-[#075e54] transition-colors">{t('users.save')}</button>
+                    <button onClick={onClose} className="px-4 py-2 rounded-lg text-[var(--foreground)] bg-[var(--accent)] hover:bg-opacity-75 transition-colors">{t('users.cancel')}</button>
+                    <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-hover)] transition-colors">{t('users.save')}</button>
                 </div>
             </div>
              <style>{`
@@ -131,33 +139,40 @@ const UserModal: React.FC<{
 
 const Users: React.FC = () => {
   const { t } = useLanguage();
-  const [users, setUsers] = useState<User[]>([]);
+  const { theme } = useTheme();
+  const [users, setUsers] = useState<User[]>(mockUsers);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const usersCollection = collection(db, 'users');
-      const usersSnapshot = await getDocs(usersCollection);
-      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-      setUsers(usersList);
-    };
-
-    fetchUsers();
-  }, []);
-
   const getRoleClass = (role: 'Admin' | 'Moderator' | 'Agent') => {
-    switch (role) {
-      case 'Admin': return 'bg-purple-500/20 text-purple-500';
-      case 'Moderator': return 'bg-yellow-500/20 text-yellow-500';
-      case 'Agent': return 'bg-blue-500/20 text-blue-500';
-      default: return 'bg-gray-500/20 text-gray-500';
-    }
+    const roleClasses = {
+        light: {
+            Admin: 'bg-purple-500/20 text-purple-600',
+            Moderator: 'bg-yellow-500/20 text-yellow-600',
+            Agent: 'bg-blue-500/20 text-blue-600',
+        },
+        dark: {
+            Admin: 'bg-purple-400/20 text-purple-400',
+            Moderator: 'bg-yellow-400/20 text-yellow-400',
+            Agent: 'bg-blue-400/20 text-blue-400',
+        }
+    };
+    return roleClasses[theme][role] || 'bg-gray-500/20 text-gray-500';
   };
   
   const getStatusClass = (status: 'Active' | 'Inactive') => {
-    return status === 'Active' ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500';
+    const statusClasses = {
+        light: {
+            Active: 'bg-green-500/20 text-green-600',
+            Inactive: 'bg-red-500/20 text-red-600',
+        },
+        dark: {
+            Active: 'bg-green-400/20 text-green-400',
+            Inactive: 'bg-red-400/20 text-red-400',
+        }
+    };
+    return statusClasses[theme][status];
   }
 
   const filteredUsers = useMemo(() => users.filter(user =>
@@ -175,26 +190,20 @@ const Users: React.FC = () => {
       setModalOpen(true);
   };
 
-  const handleSaveUser = async (userData: Omit<User, 'id'>) => {
+  const handleSaveUser = (userData: Omit<User, 'id'>) => {
       if(editingUser) {
-          const userRef = doc(db, 'users', editingUser.id as string);
-          await updateDoc(userRef, userData);
           setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...editingUser, ...userData } : u));
       } else {
-          const usersCollection = collection(db, 'users');
-          const docRef = await addDoc(usersCollection, userData);
           const newUser: User = {
-              id: docRef.id,
+              id: Math.max(...users.map(u => u.id), 0) + 1,
               ...userData,
           };
           setUsers(prev => [newUser, ...prev]);
       }
   };
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleDeleteUser = (userId: number) => {
       if (window.confirm(t('users.deleteConfirm'))) {
-          const userRef = doc(db, 'users', userId);
-          await deleteDoc(userRef);
           setUsers(prev => prev.filter(u => u.id !== userId));
       }
   };
@@ -207,21 +216,21 @@ const Users: React.FC = () => {
         onSave={handleSaveUser}
         userToEdit={editingUser}
       />
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <div className="flex justify-between items-center mb-6">
+      <div className="bg-[var(--card-background)] p-6 rounded-lg border border-[var(--border)]">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <h2 className="text-xl font-semibold">{t('users.allUsers')}</h2>
-          <div className="flex items-center gap-4">
-              <div className="relative">
+          <div className="w-full md:w-auto flex flex-col sm:flex-row items-center gap-4">
+              <div className="relative w-full sm:w-auto">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
                   <input
                       type="text"
                       placeholder={t('users.search')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-64 bg-gray-100 border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:ring-[#128c7e] focus:border-[#128c7e] transition-colors"
+                      className="w-full sm:w-64 bg-[var(--input-background)] border border-[var(--border)] rounded-lg pl-10 pr-4 py-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-colors"
                   />
               </div>
-              <button onClick={handleOpenAddModal} className="flex items-center gap-2 bg-[#128c7e] text-white px-4 py-2 rounded-lg hover:bg-[#075e54] transition-colors">
+              <button onClick={handleOpenAddModal} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[var(--primary)] text-[var(--primary-foreground)] px-4 py-2 rounded-lg hover:bg-[var(--primary-hover)] transition-colors">
               <PlusCircle size={18}/>
               <span>{t('users.addUser')}</span>
               </button>
@@ -230,7 +239,7 @@ const Users: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-gray-200">
+              <tr className="border-b border-[var(--border)]">
                 <th className="p-4 font-semibold">{t('users.name')}</th>
                 <th className="p-4 font-semibold">{t('users.role')}</th>
                 <th className="p-4 font-semibold">{t('users.platforms')}</th>
@@ -240,13 +249,13 @@ const Users: React.FC = () => {
             </thead>
             <tbody>
               {filteredUsers.map(user => (
-                <tr key={user.id} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50">
+                <tr key={user.id} className="border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--accent)]/50">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <img src={user.avatarUrl} alt={user.name} className="w-10 h-10 rounded-full object-cover"/>
                       <div>
                         <p className="font-semibold">{user.name}</p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <p className="text-sm text-[var(--foreground-muted)]">{user.email}</p>
                       </div>
                     </div>
                   </td>
@@ -258,7 +267,7 @@ const Users: React.FC = () => {
                   <td className="p-4">
                     <div className="flex flex-wrap gap-1">
                       {user.platforms?.map(platform => (
-                        <span key={platform} className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                        <span key={platform} className="px-2 py-1 text-xs font-medium rounded-full bg-[var(--accent)] text-[var(--accent-foreground)]">
                           {platform}
                         </span>
                       ))}
@@ -271,10 +280,10 @@ const Users: React.FC = () => {
                   </td>
                   <td className="p-4 text-center">
                     <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => handleOpenEditModal(user)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-100 rounded-full transition-colors" aria-label={t('users.editModalTitle')}>
+                        <button onClick={() => handleOpenEditModal(user)} className="p-2 text-gray-500 hover:text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors" aria-label={t('users.editModalTitle')}>
                             <Pencil size={18}/>
                         </button>
-                        <button onClick={() => handleDeleteUser(user.id as string)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-100 rounded-full transition-colors" aria-label={t('users.deleteConfirm')}>
+                        <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors" aria-label={t('users.deleteConfirm')}>
                             <Trash2 size={18}/>
                         </button>
                     </div>

@@ -1,6 +1,6 @@
-
 import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
+import { useTheme } from '../context/ThemeContext';
 import { useChat } from '../hooks/useChat';
 import { MessagePlatform } from '../types';
 import { Search, Facebook, Instagram, MessageCircle, FileDown, ChevronDown } from 'lucide-react';
@@ -10,13 +10,14 @@ const PlatformIcon: React.FC<{ platform: MessagePlatform }> = ({ platform }) => 
         case MessagePlatform.Facebook: return <Facebook className="w-5 h-5 text-blue-500" />;
         case MessagePlatform.Instagram: return <Instagram className="w-5 h-5 text-pink-500" />;
         case MessagePlatform.WhatsApp: return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>;
-        case MessagePlatform.WebChat: return <MessageCircle className="w-5 h-5 text-[#128c7e]" />;
+        case MessagePlatform.WebChat: return <MessageCircle className="w-5 h-5 text-[var(--primary)]" />;
         default: return <MessageCircle className="w-5 h-5 text-gray-400" />;
     }
 }
 
 const Transcript: React.FC = () => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const { conversations, messages } = useChat();
     const [searchTerm, setSearchTerm] = useState('');
     const [platformFilter, setPlatformFilter] = useState('All');
@@ -94,25 +95,36 @@ const Transcript: React.FC = () => {
         document.body.removeChild(link);
     };
 
+    const chatBubbleClasses = {
+        light: {
+            agent: 'bg-[#dcf8c6]',
+            user: 'bg-gray-50',
+        },
+        dark: {
+            agent: 'bg-emerald-900',
+            user: 'bg-stone-700',
+        }
+    };
+
     return (
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <div className="flex justify-between items-center mb-6">
+        <div className="bg-[var(--card-background)] p-6 rounded-lg border border-[var(--border)]">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <h2 className="text-xl font-semibold">{t('transcript.title')}</h2>
-                <div className="flex items-center gap-4">
-                    <div className="relative">
+                <div className="w-full md:w-auto flex flex-col sm:flex-row items-center gap-4">
+                    <div className="relative w-full sm:w-auto">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
                             type="text"
                             placeholder={t('transcript.searchPlaceholder')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-64 bg-gray-100 border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:ring-[#128c7e] focus:border-[#128c7e] transition-colors"
+                            className="w-full sm:w-64 bg-[var(--input-background)] border border-[var(--border)] rounded-lg pl-10 pr-4 py-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-colors"
                         />
                     </div>
                     <select
                         value={platformFilter}
                         onChange={(e) => setPlatformFilter(e.target.value)}
-                        className="bg-gray-100 border border-gray-300 rounded-lg py-2 px-3 focus:ring-[#128c7e] focus:border-[#128c7e] transition-colors"
+                        className="w-full sm:w-auto bg-[var(--input-background)] border border-[var(--border)] rounded-lg py-2 px-3 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-colors"
                     >
                         <option value="All">{t('transcript.allPlatforms')}</option>
                         {platforms.map(p => <option key={p} value={p}>{p}</option>)}
@@ -122,7 +134,7 @@ const Transcript: React.FC = () => {
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead>
-                        <tr className="border-b border-gray-200 bg-gray-50/50">
+                        <tr className="border-b border-[var(--border)] bg-[var(--accent)]/50">
                             <th className="p-4 font-semibold">{t('transcript.customer')}</th>
                             <th className="p-4 font-semibold">{t('transcript.lastMessage')}</th>
                             <th className="p-4 font-semibold text-center">{t('transcript.messageCount')}</th>
@@ -134,27 +146,27 @@ const Transcript: React.FC = () => {
                     <tbody>
                         {filteredConversations.map(convo => (
                             <React.Fragment key={convo.id}>
-                                <tr onClick={() => setExpandedConvoId(expandedConvoId === convo.id ? null : convo.id)} className="cursor-pointer hover:bg-gray-50 border-b border-gray-200 transition-colors">
+                                <tr onClick={() => setExpandedConvoId(expandedConvoId === convo.id ? null : convo.id)} className="cursor-pointer hover:bg-[var(--accent)]/50 border-b border-[var(--border)] transition-colors">
                                     <td className="p-4">
                                         <div className="flex items-center gap-3">
                                             <img src={convo.avatarUrl} alt={convo.customerName} className="w-10 h-10 rounded-full object-cover" />
                                             <div>
                                                 <p className="font-semibold">{convo.customerName}</p>
-                                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                                <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)]">
                                                     <PlatformIcon platform={convo.platform} />
                                                     <span>{convo.platform}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="p-4"><p className="text-gray-600 truncate max-w-xs">{convo.lastMessage}</p></td>
-                                    <td className="p-4 text-center font-medium text-gray-600">{messages[convo.id]?.length || 0}</td>
+                                    <td className="p-4"><p className="text-[var(--foreground-muted)] truncate max-w-xs">{convo.lastMessage}</p></td>
+                                    <td className="p-4 text-center font-medium">{messages[convo.id]?.length || 0}</td>
                                     <td className="p-4">
-                                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
+                                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-[var(--accent)] text-[var(--accent-foreground)]">
                                             {convo.platform}
                                         </span>
                                     </td>
-                                    <td className="p-4 text-gray-500">{convo.timestamp}</td>
+                                    <td className="p-4 text-[var(--foreground-muted)]">{convo.timestamp}</td>
                                     <td className="p-4 text-center">
                                         <div className="flex items-center justify-center gap-2">
                                             <button
@@ -163,11 +175,11 @@ const Transcript: React.FC = () => {
                                                     handleExportConversation(convo.id);
                                                 }}
                                                 title={t('transcript.downloadTranscript')}
-                                                className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-100 rounded-full transition-colors"
+                                                className="p-2 text-gray-500 hover:text-emerald-500 hover:bg-emerald-500/10 rounded-full transition-colors"
                                             >
                                                 <FileDown size={18} />
                                             </button>
-                                             <button className="p-2 text-gray-500 hover:text-gray-800 rounded-full hover:bg-gray-200 transition-colors">
+                                             <button className="p-2 text-gray-500 hover:text-[var(--foreground)] hover:bg-[var(--accent)] rounded-full transition-colors">
                                                 <ChevronDown size={20} className={`transition-transform duration-300 ${expandedConvoId === convo.id ? 'rotate-180' : ''}`} />
                                             </button>
                                         </div>
@@ -176,17 +188,17 @@ const Transcript: React.FC = () => {
                                 {expandedConvoId === convo.id && (
                                     <tr>
                                         <td colSpan={6} className="p-0">
-                                            <div className="p-4 bg-gray-100/50">
-                                                <div className="max-h-96 overflow-y-auto p-4 bg-white rounded-md border-2 border-dashed">
+                                            <div className="p-4 bg-[var(--background)]">
+                                                <div className="max-h-96 overflow-y-auto p-4 bg-[var(--card-background)] rounded-md border-2 border-dashed border-[var(--border)]">
                                                     <div className="space-y-4">
                                                         {(!messages[convo.id] || messages[convo.id].length === 0) ? (
-                                                            <p className="text-gray-500 text-center py-4">No messages in this conversation.</p>
+                                                            <p className="text-[var(--foreground-muted)] text-center py-4">No messages in this conversation.</p>
                                                         ) : (
                                                             messages[convo.id].map(msg => (
                                                                 <div key={msg.id} className={`flex items-start gap-3 ${msg.sender === 'agent' ? 'flex-row-reverse' : ''}`}>
-                                                                    <div className={`p-3 rounded-lg max-w-xl shadow-sm ${msg.sender === 'agent' ? 'bg-[#dcf8c6] rounded-br-none' : 'bg-gray-50 rounded-bl-none'}`}>
-                                                                        <p className="text-sm text-gray-800">{msg.text}</p>
-                                                                        <p className="text-xs text-gray-500 mt-1 text-right">{msg.timestamp}</p>
+                                                                    <div className={`p-3 rounded-lg max-w-xl shadow-sm ${msg.sender === 'agent' ? `${chatBubbleClasses[theme].agent} rounded-br-none` : `${chatBubbleClasses[theme].user} rounded-bl-none`}`}>
+                                                                        <p className="text-sm">{msg.text}</p>
+                                                                        <p className="text-xs text-[var(--foreground-muted)] mt-1 text-right">{msg.timestamp}</p>
                                                                     </div>
                                                                 </div>
                                                             ))
@@ -202,7 +214,7 @@ const Transcript: React.FC = () => {
                     </tbody>
                 </table>
                  {filteredConversations.length === 0 && (
-                    <div className="text-center py-10 text-gray-500">
+                    <div className="text-center py-10 text-[var(--foreground-muted)]">
                         No matching transcripts found.
                     </div>
                 )}
